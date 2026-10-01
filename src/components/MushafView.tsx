@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Verse, Chapter, AppSettings, Word } from "../types/quran";
 import { WordBadge } from "./WordBadge";
-import { ChevronLeft, ChevronRight, Play, Square, Menu } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getVerseAudioUrl } from "../services/quranApi";
 
 interface MushafViewProps {
@@ -19,8 +19,6 @@ interface MushafViewProps {
   /** Çift dokunuş: kelimenin telaffuzunu seslendir */
   onSpeakWord: (word: Word) => void;
   activePlayingWordId?: number | null;
-  /** Fihrist menüsünü aç */
-  onOpenMenu?: () => void;
   /** Panelden "Dinle" isteği için sayaç */
   playPageSignal?: number;
 }
@@ -33,7 +31,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
   onPageChange,
   onSpeakWord,
   activePlayingWordId,
-  onOpenMenu,
   playPageSignal = 0,
 }) => {
   const [isPlayingPage, setIsPlayingPage] = useState(false);
@@ -177,21 +174,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
 
   return (
     <div className="mx-auto max-w-4xl h-full flex flex-col relative">
-      {/* Fihrist düğmesi - sol üstte sayfa dokunuş alanının dışında */}
-      {onOpenMenu && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenMenu();
-          }}
-          aria-label="Fihristi aç"
-          title="Fihrist"
-          className="absolute top-0 left-0 z-10 p-2 rounded-full text-stone-300 hover:text-emerald-700 hover:bg-stone-100 transition-colors"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-      )}
-
       <div
         key={pageNumber}
         ref={frameRef}
@@ -200,9 +182,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
       >
         {/* Üst satır: fihrist boşluğu + sayfa dinleme metni */}
         <div className="mushaf-fit-header flex items-center gap-2">
-          {/* Fihrist düğmesi için yer tutucu */}
-          <div className="w-6 shrink-0" />
-
           <span className="flex-1" />
 
           <button

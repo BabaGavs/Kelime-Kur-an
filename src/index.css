@@ -114,12 +114,12 @@ body {
 /* ============================================
    KELİME MANASI - MASAÜSTÜ (imleç) ve MOBİL (dokunma)
    ============================================ */
-.word-tooltip,
-.word-tap-meaning {
-  position: absolute;
-  z-index: 50;
-  left: 50%;
-  transform: translateX(-50%);
+.word-popup {
+  position: fixed;
+  z-index: 60;
+  /* left/top JS tarafından hesaplanır */
+  left: 0;
+  top: 0;
   padding: 6px 10px;
   border-radius: 8px;
   background: #ffffff;
@@ -136,33 +136,30 @@ body {
   overflow-wrap: break-word;
 }
 
-/* Masaüstü: kelimenin ÜSTÜNDE (yukarı ok) */
-.word-tooltip {
-  bottom: calc(100% + 6px);
-  max-width: calc(220px * var(--fit, 1));
-}
-
-/* Mobil: kelimenin ALTINDA (aşağı) */
+/* Masaüstü (imleç) ve mobil (dokunma) aynı kutuyu kullanır */
+.word-tooltip,
 .word-tap-meaning {
-  top: calc(100% + 4px);
-  max-width: calc(200px * var(--fit, 1));
+  max-width: min(200px, calc(100vw - 24px));
 }
 
 @keyframes tooltipIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(4px) scale(0.96);
+    transform: translateY(4px) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
 @media (min-width: 640px) {
-  .word-tooltip {
-    max-width: 250px;
+  .word-popup {
     font-size: 12px;
+  }
+  .word-tooltip,
+  .word-tap-meaning {
+    max-width: min(250px, calc(100vw - 24px));
   }
 }
 

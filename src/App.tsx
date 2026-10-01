@@ -615,7 +615,6 @@ export default function App() {
               onPageChange={handleJumpToPage}
               onSpeakWord={handlePlayWordAudio}
               activePlayingWordId={activePlayingWordId}
-              onOpenMenu={() => setIsSidebarOpen(true)}
               playPageSignal={playPageSignal}
             />
           ) : (

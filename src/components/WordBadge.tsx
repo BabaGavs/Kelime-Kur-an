@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { Word, Verse } from "../types/quran";
 
 interface WordBadgeProps {
@@ -15,13 +15,13 @@ interface WordBadgeProps {
 }
 
 const DOUBLE_TAP_MS = 320;
+const VIEWPORT_MARGIN = 8;
 
 export const WordBadge: React.FC<WordBadgeProps> = ({
   word,
   verse,
   alwaysShowMeaning,
   onSpeakWord,
-  isSelected,
   fontClass,
   fontSizeMultiplier,
   activePlayingWordId,
@@ -29,11 +29,15 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [tapMeaning, setTapMeaning] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const popRef = useRef<HTMLSpanElement>(null);
   const lastTap = useRef(0);
 
   const isEndOfAyah = word.char_type_name === "end";
   const turkishMeaning = word.translation?.text || "";
   const isPlaying = activePlayingWordId === word.id;
+  const showTooltip = isHovered && !alwaysShowMeaning && !!turkishMeaning;
+  const showTapMeaning = tapMeaning && !alwaysShowMeaning && !!turkishMeaning;
+  const showPopup = showTooltip || showTapMeaning;
 
   // Tek dokunuş: manası. Çift dokunuş: telaffuz sesi.
   const handleActivate = (e: React.PointerEvent) => {
@@ -56,6 +60,75 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
       lastTap.current = 0;
     }, DOUBLE_TAP_MS);
   };
+
+  // Manayı ekran içinde tut: kelime soldaysa kutu sağa, sağdaysa sola kayar
+  useLayoutEffect(() => {
+    if (!showPopup) return;
+
+    const anchor = rootRef.current;
+    const pop = popRef.current;
+    if (!anchor || !pop) return;
+
+    const place = () => {
+      const a = anchor.getBoundingClientRect();
+      // Ölçüm için geçici konum: sol üst köşe, kaymasız
+      pop.style.transform = "none";
+      const p = pop.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // Yatay: kelimenin üstünde ortala, sığmazsa kenara yasla
+      const centered = a.left + a.width / 2 - p.width / 2;
+      const left = Math.max(
+        VIEWPORT_MARGIN,
+        Math.min(centered, vw - p.width - VIEWPORT_MARGIN),
+      );
+
+      // Dikey: kelimenin altı (dokunma) / üstü (imleç)
+      const below = showTapMeaning;
+      const rawTop = below ? a.bottom + 6 : a.top - p.height - 6;
+      const top = Math.max(
+        VIEWPORT_MARGIN,
+        Math.min(rawTop, vh - p.height - VIEWPORT_MARGIN),
+      );
+
+      pop.style.left = `${Math.round(left)}px`;
+      pop.style.top = `${Math.round(top)}px`;
+    };
+
+    // Ölçüm bitene kadar gizli, sonra yerine oturur
+    place();
+    pop.style.visibility = "visible";
+    place();
+
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+
+    // Yazı tipleri geç yüklenince satırlar kayar -> yeniden ölç
+    let cancelled = false;
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        if (!cancelled) place();
+      });
+    }
+    const raf = requestAnimationFrame(() => {
+      if (!cancelled) place();
+    });
+
+    // Kelimenin boyutu değişirse (yazı tipi, fit ölçeklemesi) yeniden ölç
+    const ro =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(place) : null;
+    ro?.observe(anchor);
+    ro?.observe(pop);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [showPopup, showTapMeaning]);
 
   // Başka bir yere dokununca manayı kapat
   useEffect(() => {
@@ -87,11 +160,9 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
     <div
       ref={rootRef}
       className={`relative inline-flex flex-col items-center justify-center rounded-lg transition-all cursor-pointer group select-none ${
-        isSelected
-          ? "bg-emerald-500/20 ring-2 ring-emerald-500"
-          : tapMeaning
-            ? "bg-emerald-50 ring-1 ring-emerald-200"
-            : "hover:bg-emerald-50"
+        tapMeaning
+          ? "bg-emerald-50 ring-1 ring-emerald-200"
+          : "hover:bg-emerald-50"
       }`}
       style={{ padding: "calc(0.25rem) calc(0.375rem)" }}
       onMouseEnter={() => setIsHovered(true)}
@@ -128,16 +199,15 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
         </span>
       )}
 
-      {/* Masaüstü: imleç ile üzerine gelince sadece manası */}
-      {isHovered && !alwaysShowMeaning && turkishMeaning && (
-        <span role="tooltip" className="word-tooltip">
-          {turkishMeaning}
-        </span>
-      )}
-
-      {/* Dokununca kelimenin altında manası */}
-      {tapMeaning && !alwaysShowMeaning && turkishMeaning && (
-        <span className="word-tap-meaning" role="status">
+      {/* Manası: ekran içinde konumlanan tek kutu (imleç üstte, dokunuş altta) */}
+      {showPopup && (
+        <span
+          ref={popRef}
+          role={showTapMeaning ? "status" : "tooltip"}
+          className={`word-popup ${showTapMeaning ? "word-tap-meaning" : "word-tooltip"}`}
+          // Konumu JS ölçene kadar gizli
+          style={{ visibility: "hidden" }}
+        >
           {turkishMeaning}
         </span>
       )}
