@@ -1,20 +1,1431 @@
 @import "tailwindcss";
 
+/* Koyu mod tamamen kaldirildi: dark varyantini devre disi birak */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer utilities {
   .font-arabic {
-    font-family: 'Amiri', 'Traditional Arabic', 'Scheherazade New', 'Noto Naskh Arabic', serif;
+    font-family:
+      "Amiri", "Traditional Arabic", "Scheherazade New", "Noto Naskh Arabic",
+      serif;
   }
   .font-scheherazade {
-    font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif;
+    font-family: "Scheherazade New", "Amiri", "Traditional Arabic", serif;
   }
 }
 
-/* Custom Sepia & Dark color styles */
+/* ============================================
+   GÖZ YORMayan OKUMA PALETİ
+   Sıcak nötr zemin + düşük doygunluk + yumuşak kontrast
+   ============================================ */
+
+:root,
 [data-theme="sepia"] {
-  --bg-primary: #fbf7ee;
-  --bg-secondary: #f4ede0;
-  --text-primary: #382c1e;
-  --text-secondary: #6e5842;
-  --border-color: #e5d8c3;
-  --accent-color: #047857;
+  /* Zeminler: sıcak kırık bej (mavi ışığı yansıtmaz) */
+  --bg-primary: #f6f2ec;
+  --bg-secondary: #efeae1;
+  --bg-card: #fdfbf7;
+  --bg-elevated: #fffdf9;
+
+  /* Metin: saf siyah yerine yumuşak kahve-siyah (7:1 kontrast) */
+  --text-primary: #2f2a24;
+  --text-secondary: #5d564e;
+  --text-muted: #8d857b;
+
+  /* Çizgiler: çok soluk, gözü yormaz */
+  --border-color: #e2dbd0;
+  --border-light: #ece6dd;
+
+  /* Vurgu: muted adaçayı-yeşil (İslami ruh) */
+  --accent-color: #5f7a6e;
+  --accent-hover: #4d655b;
+  --accent-light: #e7eeea;
+  --accent-glow: rgba(95, 122, 110, 0.18);
+
+  /* Altın: mücevher aksan */
+  --gold: #b8994f;
+  --gold-light: #f2e9d5;
+
+  /* Gölgeler: çok yumuşak */
+  --shadow-sm: 0 1px 2px rgba(60, 48, 32, 0.04);
+  --shadow-md: 0 4px 14px rgba(60, 48, 32, 0.06);
+  --shadow-lg: 0 10px 28px rgba(60, 48, 32, 0.08);
+  --shadow-glow: 0 0 22px var(--accent-glow);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --transition-fast: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 520ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Base styles */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family:
+    "Plus Jakarta Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Uzun metin okumada gerginliği azalt */
+  letter-spacing: 0.006em;
+}
+
+/* ============================================
+   MUSHAF SAYFA ÇEVİRME (kitap hissi)
+   ============================================ */
+@keyframes pageInNext {
+  from {
+    opacity: 0;
+    transform: perspective(1400px) translateX(30px) rotateY(-9deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1400px) translateX(0) rotateY(0);
+  }
+}
+
+@keyframes pageInPrev {
+  from {
+    opacity: 0;
+    transform: perspective(1400px) translateX(-30px) rotateY(9deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1400px) translateX(0) rotateY(0);
+  }
+}
+
+@keyframes pageOutNext {
+  from {
+    opacity: 1;
+    transform: perspective(1400px) translateX(0) rotateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: perspective(1400px) translateX(-30px) rotateY(9deg);
+  }
+}
+
+@keyframes pageOutPrev {
+  from {
+    opacity: 1;
+    transform: perspective(1400px) translateX(0) rotateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: perspective(1400px) translateX(30px) rotateY(-9deg);
+  }
+}
+
+.mushaf-page-enter-next {
+  animation: pageInNext 340ms cubic-bezier(0.22, 0.85, 0.3, 1);
+}
+
+.mushaf-page-enter-prev {
+  animation: pageInPrev 340ms cubic-bezier(0.22, 0.85, 0.3, 1);
+}
+
+.mushaf-page-exit-next {
+  animation: pageOutNext 300ms cubic-bezier(0.55, 0, 0.75, 0.2);
+}
+
+.mushaf-page-exit-prev {
+  animation: pageOutPrev 300ms cubic-bezier(0.55, 0, 0.75, 0.2);
+}
+
+/* Kitap sırtı efekti (sayfa kenarında ince gölge) */
+.mushaf-spine {
+  position: relative;
+}
+
+.mushaf-spine::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 14px;
+  background: linear-gradient(90deg, rgba(90, 76, 56, 0.1), transparent);
+  pointer-events: none;
+}
+
+/* ============================================
+   KELİME MANASI TOOLTIP
+   Açık zemin üzerinde koyu (siyah) metin - kesin okunur
+   ============================================ */
+.word-tooltip {
+  position: absolute;
+  z-index: 50;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 220px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #ddd6c8;
+  color: #14120e; /* siyah */
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(40, 32, 18, 0.14);
+  pointer-events: none;
+  animation: tooltipIn 160ms cubic-bezier(0.34, 1.3, 0.64, 1);
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+@keyframes tooltipIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@media (min-width: 640px) {
+  .word-tooltip {
+    max-width: 250px;
+    font-size: 12px;
+  }
+}
+
+/* ============================================
+   İSLAMİ GEOMETRİK DESEN (Arka Plan)
+   ============================================ */
+.islamic-pattern {
+  background-image:
+    radial-gradient(circle at 25% 25%, var(--accent-glow) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, var(--accent-glow) 0%, transparent 50%);
+  background-size: 100px 100px;
+}
+
+/* ============================================
+   YUMUŞAK ANİMASYONLAR
+   ============================================ */
+
+/* Fade In Up */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade In */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Scale In */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Slide In Right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Slide In Left */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Gentle Pulse */
+@keyframes gentlePulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Soft Glow */
+@keyframes softGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px var(--accent-glow);
+  }
+}
+
+/* Float */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Spin Slow */
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Bounce Soft */
+@keyframes bounceSoft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Stagger children animation */
+.stagger-children > * {
+  animation: fadeInUp var(--transition-smooth) forwards;
+  opacity: 0;
+}
+
+.stagger-children > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.stagger-children > *:nth-child(2) {
+  animation-delay: 50ms;
+}
+.stagger-children > *:nth-child(3) {
+  animation-delay: 100ms;
+}
+.stagger-children > *:nth-child(4) {
+  animation-delay: 150ms;
+}
+.stagger-children > *:nth-child(5) {
+  animation-delay: 200ms;
+}
+.stagger-children > *:nth-child(6) {
+  animation-delay: 250ms;
+}
+.stagger-children > *:nth-child(7) {
+  animation-delay: 300ms;
+}
+.stagger-children > *:nth-child(8) {
+  animation-delay: 350ms;
+}
+.stagger-children > *:nth-child(n + 9) {
+  animation-delay: 400ms;
+}
+
+/* ============================================
+   BİLEŞEN STİLLERİ
+   ============================================ */
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-smooth);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--accent-color);
+  color: white;
+  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: all var(--transition-smooth);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Gold Accent */
+.gold-accent {
+  color: var(--gold);
+}
+
+.gold-bg {
+  background: linear-gradient(135deg, var(--gold) 0%, #e8c96d 100%);
+}
+
+/* Islamic Border Pattern */
+.islamic-border {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+    linear-gradient(135deg, var(--accent-color), var(--gold)) border-box;
+}
+
+/* Text Gradient */
+.text-gradient {
+  background: linear-gradient(135deg, var(--accent-color) 0%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow Effect */
+.glow {
+  box-shadow: var(--shadow-glow);
+}
+
+/* Hover Lift */
+.hover-lift {
+  transition: all var(--transition-smooth);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Smooth Scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+  transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-light);
+  color: var(--accent-color);
+}
+
+/* Focus Styles */
+*:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   TAILWIND OVERRIDES
+   ============================================ */
+
+/* Background overrides */
+.bg-white {
+  background-color: var(--bg-card);
+}
+
+.bg-stone-50,
+.bg-stone-100 {
+  background-color: var(--bg-secondary);
+}
+
+/* NOT: .bg-stone-900 / .bg-stone-950 bilerek override EDILMEZ.
+   Koyu zemin gereken yerler (tooltip gibi) gerçek koyu arka planı kullanır. */
+
+/* Text overrides */
+.text-stone-900,
+.text-stone-800 {
+  color: var(--text-primary);
+}
+
+.text-stone-700,
+.text-stone-600 {
+  color: var(--text-secondary);
+}
+
+.text-stone-500,
+.text-stone-400 {
+  color: var(--text-muted);
+}
+
+/* Border overrides */
+.border-stone-200,
+.border-stone-300,
+.border-stone-100 {
+  border-color: var(--border-color);
+}
+
+.border-stone-700,
+.border-stone-800 {
+  border-color: var(--border-light);
+}
+
+.divide-stone-100,
+.divide-stone-200 {
+  border-color: var(--border-light);
+}
+
+/* Shadow overrides */
+.shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-lg,
+.shadow-xl {
+  box-shadow: var(--shadow-lg);
+}
+
+.shadow-stone-950\/5,
+.shadow-stone-950\/15,
+.shadow-stone-950\/20 {
+  --tw-shadow-color: rgba(60, 48, 32, 0.12);
+}
+
+/* Emerald to Teal accent */
+.bg-emerald-600 {
+  background-color: var(--accent-color) !important;
+}
+
+.bg-emerald-700 {
+  background-color: var(--accent-hover) !important;
+}
+
+.hover\:bg-emerald-700:hover {
+  background-color: var(--accent-hover) !important;
+}
+
+.text-emerald-700,
+.text-emerald-800 {
+  color: var(--accent-color) !important;
+}
+
+.text-emerald-600 {
+  color: var(--accent-color) !important;
+}
+
+.bg-emerald-50,
+.bg-emerald-100 {
+  background-color: var(--accent-light) !important;
+}
+
+.border-emerald-500,
+.border-emerald-600 {
+  border-color: var(--accent-color) !important;
+}
+
+.ring-emerald-500 {
+  --tw-ring-color: var(--accent-color) !important;
+}
+
+/* ============================================
+   ANİMASYON SINIFLARI
+   ============================================ */
+
+.animate-fade-in {
+  animation: fadeIn var(--transition-smooth) forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp var(--transition-smooth) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--transition-smooth) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--transition-smooth) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft var(--transition-smooth) forwards;
+}
+
+.animate-gentle-pulse {
+  animation: gentlePulse 2s ease-in-out infinite;
+}
+
+.animate-soft-glow {
+  animation: softGlow 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-bounce-soft {
+  animation: bounceSoft 2s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spinSlow 8s linear infinite;
+}
+
+/* Shimmer effect for loading */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--border-light) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ============================================
+   ÖZEL EFEKTLER
+   ============================================ */
+
+/* Verse Card Hover Effect */
+.verse-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.verse-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-color), var(--gold));
+  opacity: 0;
+  transition: opacity var(--transition-smooth);
+}
+
+.verse-card:hover::before {
+  opacity: 1;
+}
+
+/* Word Badge Glow */
+.word-badge-glow {
+  position: relative;
+}
+
+.word-badge-glow::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--accent-color), var(--gold));
+  opacity: 0;
+  z-index: -1;
+  transition: opacity var(--transition-smooth);
+  filter: blur(8px);
+}
+
+.word-badge-glow:hover::after {
+  opacity: 0.3;
+}
+
+/* Islamic Corner Decoration */
+.islamic-corner {
+  position: relative;
+}
+
+.islamic-corner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, transparent 50%, var(--accent-light) 50%);
+  border-radius: 0 var(--radius-lg) 0 0;
+  opacity: 0.5;
+}
+
+/* Smooth Page Transition */
+.page-transition {
+  animation: fadeInUp var(--transition-smooth) forwards;
+}
+
+/* Loading Skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--border-light) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* Tooltip */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  padding: 6px 12px;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all var(--transition-fast);
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-8px);
+}
+
+/* Progress Bar */
+.progress-bar {
+  height: 4px;
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-color), var(--gold));
+  border-radius: 2px;
+  transition: width var(--transition-smooth);
+}
+
+/* Divider with Islamic pattern */
+.islamic-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border-color) 20%,
+    var(--border-color) 80%,
+    transparent
+  );
+  position: relative;
+}
+
+.islamic-divider::after {
+  content: "◆";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--gold);
+  font-size: 8px;
+  background: var(--bg-primary);
+  padding: 0 8px;
+}
+
+/* Notification Badge */
+.notification-badge {
+  position: relative;
+}
+
+.notification-badge::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+}
+
+/* Input Focus Ring */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* Button Ripple Effect */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s,
+    height 0.6s;
+}
+
+.btn-ripple:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Card Stack Effect */
+.card-stack {
+  position: relative;
+}
+
+.card-stack::before,
+.card-stack::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  z-index: -1;
+}
+
+.card-stack::before {
+  transform: rotate(-1deg) translateY(2px);
+  opacity: 0.5;
+}
+
+.card-stack::after {
+  transform: rotate(1deg) translateY(4px);
+  opacity: 0.3;
+}
+
+/* Glow Button */
+.btn-glow {
+  position: relative;
+}
+
+.btn-glow::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, var(--accent-color), var(--gold));
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  filter: blur(12px);
+  transition: opacity var(--transition-smooth);
+}
+
+.btn-glow:hover::before {
+  opacity: 0.4;
+}
+
+/* Text Shadow for Arabic */
+.arabic-text-shadow {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover Scale */
+.hover-scale {
+  transition: transform var(--transition-smooth);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Active State */
+.active-state {
+  position: relative;
+}
+
+.active-state::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  background: var(--accent-color);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-smooth);
+  z-index: 50;
+}
+
+.fab:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Back to Top Button */
+.back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-smooth);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.back-to-top:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: translateY(-4px);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  animation: fadeIn var(--transition-fast);
+}
+
+/* Modal Content */
+.modal-content {
+  animation: scaleIn var(--transition-smooth);
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  z-index: 40;
+  animation: fadeIn var(--transition-fast);
+}
+
+/* Toast Notification */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  opacity: 0;
+  transition: all var(--transition-smooth);
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 180px;
+  z-index: 50;
+  animation: scaleIn var(--transition-fast);
+  transform-origin: top right;
+}
+
+/* Tabs */
+.tab {
+  position: relative;
+  padding: 12px 20px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: color var(--transition-fast);
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab.active {
+  color: var(--accent-color);
+}
+
+.tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent-color);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Range Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 5px var(--accent-glow);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition-fast);
+}
+
+/* Checkbox */
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+input[type="checkbox"]:checked {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+/* Toggle Switch */
+.toggle {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  background: var(--bg-secondary);
+  border-radius: 13px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.toggle.active {
+  background: var(--accent-color);
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.toggle.active::after {
+  transform: translateX(22px);
+}
+
+/* Audio Player */
+.audio-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.audio-player-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.audio-player-btn:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-glow);
+}
+
+.audio-player-progress {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.audio-player-progress-fill {
+  height: 100%;
+  background: var(--accent-color);
+  transition: width 0.1s linear;
+}
+
+/* Verse Number Badge */
+.verse-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--accent-light);
+  color: var(--accent-color);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Chapter Number Badge */
+.chapter-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent-color), var(--gold));
+  color: white;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Loading Spinner */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--bg-secondary);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spinSlow 0.8s linear infinite;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--accent-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: var(--accent-color);
+}
+
+/* Search Highlight */
+.search-highlight {
+  background: var(--gold-light);
+  color: var(--text-primary);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* Tooltip Arrow */
+.tooltip-arrow {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--text-primary);
+}
+
+/* Islamic Star Pattern */
+.islamic-star {
+  position: relative;
+}
+
+.islamic-star::before {
+  content: "✦";
+  position: absolute;
+  color: var(--gold);
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+/* Crescent Moon */
+.crescent {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.crescent::before {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: var(--gold);
+  border-radius: 50%;
+  box-shadow: 4px 0 0 0 var(--bg-primary);
+}
+
+/* Geometric Pattern Background */
+.geometric-pattern {
+  background-image:
+    linear-gradient(
+      30deg,
+      var(--accent-light) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      var(--accent-light) 87.5%,
+      var(--accent-light)
+    ),
+    linear-gradient(
+      150deg,
+      var(--accent-light) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      var(--accent-light) 87.5%,
+      var(--accent-light)
+    ),
+    linear-gradient(
+      30deg,
+      var(--accent-light) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      var(--accent-light) 87.5%,
+      var(--accent-light)
+    ),
+    linear-gradient(
+      150deg,
+      var(--accent-light) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      var(--accent-light) 87.5%,
+      var(--accent-light)
+    ),
+    linear-gradient(
+      60deg,
+      var(--bg-secondary) 25%,
+      transparent 25.5%,
+      transparent 75%,
+      var(--bg-secondary) 75%,
+      var(--bg-secondary)
+    ),
+    linear-gradient(
+      60deg,
+      var(--bg-secondary) 25%,
+      transparent 25.5%,
+      transparent 75%,
+      var(--bg-secondary) 75%,
+      var(--bg-secondary)
+    );
+  background-size: 40px 70px;
+  background-position:
+    0 0,
+    0 0,
+    20px 35px,
+    20px 35px,
+    0 0,
+    20px 35px;
+  opacity: 0.3;
+}
+
+/* Responsive Typography */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
 }

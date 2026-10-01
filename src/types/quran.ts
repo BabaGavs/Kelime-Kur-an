@@ -1,6 +1,6 @@
 export interface Chapter {
   id: number;
-  revelation_place: 'makkah' | 'madinah';
+  revelation_place: "makkah" | "madinah";
   revelation_order: number;
   bismillah_pre: boolean;
   name_simple: string;
@@ -28,7 +28,7 @@ export interface Word {
   id: number;
   position: number;
   audio_url: string | null;
-  char_type_name: 'word' | 'end';
+  char_type_name: "word" | "end";
   text_uthmani: string;
   text?: string;
   translation?: WordTranslation;
@@ -46,7 +46,7 @@ export interface Translation {
 export interface Verse {
   id: number;
   verse_number: number;
-  verse_key: string; // e.g. "1:1"
+  verse_key: string; // e.g."1:1"
   hizb_number?: number;
   rub_el_hizb_number?: number;
   ruku_number?: number;
@@ -67,10 +67,10 @@ export interface ChapterInfo {
   text: string;
 }
 
-export type DisplayMode = 'word-by-word' | 'mushaf' | 'translation';
-export type AppTheme = 'light' | 'dark' | 'sepia';
-export type ArabicFont = 'amiri' | 'scheherazade' | 'system';
-export type TranslationSource = 77 | 52 | 'both'; // 77 = Diyanet, 52 = Elmalılı
+export type DisplayMode = "word-by-word" | "mushaf" | "translation";
+export type AppTheme = "light" | "sepia";
+export type ArabicFont = "amiri" | "scheherazade" | "system";
+export type TranslationSource = 77 | 52 | "both"; // 77 = Diyanet, 52 = Elmalılı
 
 export interface Bookmark {
   id: string;
