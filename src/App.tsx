@@ -48,18 +48,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export default function App() {
-  // Telefon / tablet algılama (lg altı = sade mod)
-  const [isCompact, setIsCompact] = useState<boolean>(
-    () => typeof window !== "undefined" && window.innerWidth < 1024,
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1023px)");
-    const onChange = () => setIsCompact(mq.matches);
-    onChange();
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
+  // Tüm platformlarda sade Mushaf görünümü: ekranın tamamı Kur'an,
+  // hiçbir panel görünmez; sayfaya dokununca menü açılır.
 
   // Navigation & Data State
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -110,6 +100,9 @@ export default function App() {
   const [activePlayingVerseKey, setActivePlayingVerseKey] = useState<
     string | null
   >(null);
+  // Sayfayı sesli dinleme tetiği (panelden gelen istek)
+  const [playPageSignal, setPlayPageSignal] = useState(0);
+
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Audio elements ref
@@ -129,6 +122,13 @@ export default function App() {
       root.removeAttribute("data-theme");
     }
   }, [settings]);
+
+  // Dikey kaydırmayı kilitle: Kur'an sayfası tek ekrana sığar
+  useEffect(() => {
+    const lock = settings.displayMode === "mushaf";
+    document.body.classList.toggle("mushaf-fit-lock", lock);
+    return () => document.body.classList.remove("mushaf-fit-lock");
+  }, [settings.displayMode]);
 
   // Save Bookmarks
   useEffect(() => {
@@ -371,9 +371,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50 text-stone-900 transition-colors">
-      {/* Top Navbar - yalnızca masaüstü (telefon/tablet'te gizli) */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-sm hidden lg:block">
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-stone-50 text-stone-900 transition-colors">
+      {/* Top Navbar - tüm platformlarda gizli (sade Mushaf görünümü) */}
+      <header className="hidden">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
           {/* Left: Mobile Menu & Logo */}
           <div className="flex items-center gap-2 sm:gap-3">
@@ -474,7 +474,7 @@ export default function App() {
       </header>
 
       {/* Main Container Layout */}
-      <div className="flex-1 max-w-7xl w-full mx-auto flex">
+      <div className="flex-1 max-w-7xl w-full mx-auto flex min-h-0">
         {/* Left Sidebar (Surahs, Juzs, Pages) */}
         <Sidebar
           chapters={chapters}
@@ -492,10 +492,17 @@ export default function App() {
           onSwitchToWordMode={() =>
             setSettings((s) => ({ ...s, displayMode: "word-by-word" }))
           }
+          onPlayPage={() => setPlayPageSignal((n) => n + 1)}
         />
 
         {/* Center Main Reader Content Area */}
-        <main className="flex-1 min-w-0 p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+        <main
+          className={`flex-1 min-w-0 min-h-0 p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 ${
+            settings.displayMode === "mushaf"
+              ? "overflow-hidden"
+              : "overflow-y-auto"
+          }`}
+        >
           {/* Chapter Top Hero / Information Card */}
           {settings.displayMode !== "mushaf" && (
             <div className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-700 to-teal-800 text-white shadow-lg relative overflow-hidden">
@@ -534,8 +541,8 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                  {/* Mobil/tablet mod geçişi */}
-                  {isCompact && (
+                  {/* Mod geçişi */}
+                  {
                     <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-white/15 border border-white/20 backdrop-blur-sm">
                       <span className="px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold bg-white text-emerald-700 shadow-sm">
                         Kelime Meali
@@ -549,7 +556,7 @@ export default function App() {
                         Mushaf
                       </button>
                     </div>
-                  )}
+                  }
 
                   <button
                     onClick={() => setIsInfoOpen(true)}
@@ -609,14 +616,13 @@ export default function App() {
               selectedWordId={selectedWord?.id}
               activePlayingWordId={activePlayingWordId}
               onPlayWordAudio={handlePlayWordAudio}
-              swipeEnabled={isCompact}
+              swipeEnabled
               displayMode={settings.displayMode}
-              onDisplayModeChange={
-                isCompact
-                  ? (mode) => setSettings((s) => ({ ...s, displayMode: mode }))
-                  : undefined
+              onDisplayModeChange={(mode) =>
+                setSettings((s) => ({ ...s, displayMode: mode }))
               }
-              onOpenMenu={isCompact ? () => setIsSidebarOpen(true) : undefined}
+              onOpenMenu={() => setIsSidebarOpen(true)}
+              playPageSignal={playPageSignal}
             />
           ) : (
             /* Mode 2: Word-by-Word Verse Cards */

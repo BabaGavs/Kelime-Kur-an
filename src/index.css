@@ -157,22 +157,20 @@ body {
 }
 
 /* ============================================
-   KELİME MANASI TOOLTIP
-   Açık zemin üzerinde koyu (siyah) metin - kesin okunur
+   KELİME MANASI - MASAÜSTÜ (imleç) ve MOBİL (dokunma)
    ============================================ */
-.word-tooltip {
+.word-tooltip,
+.word-tap-meaning {
   position: absolute;
   z-index: 50;
-  bottom: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
-  max-width: 220px;
   padding: 6px 10px;
   border-radius: 8px;
   background: #ffffff;
   border: 1px solid #ddd6c8;
-  color: #14120e; /* siyah */
-  font-size: 11px;
+  color: #14120e;
+  font-size: calc(11px * var(--fit, 1));
   font-weight: 600;
   line-height: 1.35;
   text-align: center;
@@ -181,6 +179,18 @@ body {
   animation: tooltipIn 160ms cubic-bezier(0.34, 1.3, 0.64, 1);
   white-space: normal;
   overflow-wrap: break-word;
+}
+
+/* Masaüstü: kelimenin ÜSTÜNDE (yukarı ok) */
+.word-tooltip {
+  bottom: calc(100% + 6px);
+  max-width: calc(220px * var(--fit, 1));
+}
+
+/* Mobil: kelimenin ALTINDA (aşağı) */
+.word-tap-meaning {
+  top: calc(100% + 4px);
+  max-width: calc(200px * var(--fit, 1));
 }
 
 @keyframes tooltipIn {
@@ -199,6 +209,38 @@ body {
     max-width: 250px;
     font-size: 12px;
   }
+}
+
+/* ============================================
+   MUSHAF - BİR EKRANA SIĞDIRMA (mobil/tablet)
+   ============================================ */
+/* Sayfa yüksekliği kilitli: dikey kaydırma olmaz */
+body.mushaf-fit-lock {
+  overflow: hidden;
+  overscroll-behavior: none;
+  height: 100dvh;
+}
+
+.mushaf-fit-frame {
+  --fit: 1;
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mushaf-fit-content {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow: hidden;
+  /* Sayfa metni dikeyde ortalanır (Mushaf görünümü) */
+  justify-content: center;
+}
+
+.mushaf-fit-header,
+.mushaf-fit-footer {
+  flex: 0 0 auto;
 }
 
 /* ============================================

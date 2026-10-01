@@ -9,6 +9,7 @@ import {
   Settings,
   Bookmark,
   BookOpen,
+  Volume2,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -26,6 +27,8 @@ interface SidebarProps {
   onOpenSettings?: () => void;
   onOpenBookmarks?: () => void;
   onSwitchToWordMode?: () => void;
+  /** Sayfayı sesli dinle */
+  onPlayPage?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -42,6 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSettings,
   onOpenBookmarks,
   onSwitchToWordMode,
+  onPlayPage,
 }) => {
   const [activeTab, setActiveTab] = useState<"surahs" | "juz" | "pages">(
     "surahs",
@@ -72,17 +76,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Backdrop */}
+      {/* Arka plan: her platformda panel açıkken görünür */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-stone-900/60 backdrop-blur-sm lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-stone-900/40 backdrop-blur-sm transition-opacity"
           onClick={onClose}
         />
       )}
 
-      {/* Aside Container */}
+      {/* Aside Container - her platformda açılan panel */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-full sm:w-80 bg-white border-r border-stone-200 flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:w-80 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-full sm:w-80 md:w-[360px] lg:w-[380px] bg-white border-r border-stone-200 flex flex-col transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -313,7 +317,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {/* Alt aksiyon çubuğu: arama, yer imleri, ayarlar, mod değişimi */}
-        <div className="p-2 sm:p-3 border-t border-stone-200 bg-stone-50/70 grid grid-cols-4 gap-1 sm:gap-1.5">
+        <div className="p-2 sm:p-3 border-t border-stone-200 bg-stone-50/70 grid grid-cols-5 gap-1 sm:gap-1.5">
+          {onPlayPage && (
+            <button
+              onClick={() => {
+                onPlayPage();
+                onClose();
+              }}
+              className="flex flex-col items-center gap-1 py-2 rounded-xl text-[10px] font-medium text-stone-600 hover:bg-white hover:text-emerald-700 transition-colors"
+            >
+              <Volume2 className="w-4 h-4" />
+              <span>Dinle</span>
+            </button>
+          )}
           {onOpenSearch && (
             <button
               onClick={() => {

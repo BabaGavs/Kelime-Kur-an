@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useLayoutEffect,
+} from "react";
 import { Verse, Chapter, AppSettings, Word, DisplayMode } from "../types/quran";
 import { WordBadge } from "./WordBadge";
 import { ArrowLeft, ArrowRight, Play, Square } from "lucide-react";
@@ -18,10 +24,12 @@ interface MushafViewProps {
   onOpenMenu?: () => void;
   /** Sayfa çevirme (parmak kaydırma) etkin mi */
   swipeEnabled?: boolean;
-  /** Görünüm modu (geçiş butonları için) */
+  /** Görünüm modu */
   displayMode?: DisplayMode;
-  /** Mobil/tablet sayfa başında mod geçişi */
+  /** Mod değiştirme geri çağrısı (panelden) */
   onDisplayModeChange?: (mode: DisplayMode) => void;
+  /** Panelden "Dinle" isteği için sayaç */
+  playPageSignal?: number;
 }
 
 const SWIPE_THRESHOLD = 70;
@@ -40,10 +48,54 @@ export const MushafView: React.FC<MushafViewProps> = ({
   swipeEnabled = false,
   displayMode = "mushaf",
   onDisplayModeChange,
+  playPageSignal = 0,
 }) => {
   const [isPlayingPage, setIsPlayingPage] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
+
+  // ---- Bir ekrana sığdırma (mobil/tablet) ----
+  const frameRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const frame = frameRef.current;
+    const content = contentRef.current;
+    if (!frame || !content) return;
+
+    const fit = () => {
+      if (!swipeEnabled) {
+        frame.style.setProperty("--fit", "1");
+        return;
+      }
+      frame.style.setProperty("--fit", "1");
+      // Oransal küçültme: taşma oranına göre ölçekle (hızlı yakınsar)
+      let scale = 1;
+      for (let i = 0; i < 16; i++) {
+        const over = content.scrollHeight - content.clientHeight;
+        if (over <= 1) break;
+        const ratio = content.clientHeight / content.scrollHeight;
+        scale = Math.max(0.28, scale * ratio * 0.95);
+        frame.style.setProperty("--fit", scale.toFixed(3));
+      }
+      frame.style.setProperty("--fit", scale.toFixed(3));
+    };
+
+    fit();
+    // Yazı tipleri ve düzen geç yerleşebilir -> birkaç gecikmeli ölçüm
+    const timers = [
+      setTimeout(fit, 120),
+      setTimeout(fit, 400),
+      setTimeout(fit, 1000),
+    ];
+    window.addEventListener("resize", fit);
+    window.addEventListener("orientationchange", fit);
+    return () => {
+      timers.forEach(clearTimeout);
+      window.removeEventListener("resize", fit);
+      window.removeEventListener("orientationchange", fit);
+    };
+  }, [pageNumber, verses, swipeEnabled, settings.fontSizeMultiplier]);
 
   // ---- Sayfa çevirme (kitap hissi) ----
   const [dragX, setDragX] = useState(0);
@@ -60,23 +112,29 @@ export const MushafView: React.FC<MushafViewProps> = ({
     return () => clearTimeout(t);
   }, [pageNumber]);
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (!swipeEnabled) return;
-    const t = e.touches[0];
-    touchStart.current = { x: t.clientX, y: t.clientY };
+  // Pointer tabanlı sürükleme: hem dokunmatik hem fare ile çalışır
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    // Kelimelerin üzerinde sürükleme başlatma (kelime seçimi önemli)
+    if ((e.target as HTMLElement).closest("[data-no-swipe]")) return;
+    touchStart.current = { x: e.clientX, y: e.clientY };
     axisLocked.current = null;
   };
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!swipeEnabled || !touchStart.current) return;
-    const t = e.touches[0];
-    const dx = t.clientX - touchStart.current.x;
-    const dy = t.clientY - touchStart.current.y;
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!touchStart.current) return;
+    const dx = e.clientX - touchStart.current.x;
+    const dy = e.clientY - touchStart.current.y;
 
     // Yatay/dikey ayrımı: dikey hareketi engelleme
     if (!axisLocked.current) {
       if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
         axisLocked.current = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+        if (axisLocked.current === "x") {
+          try {
+            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+          } catch {}
+        }
       }
     }
     if (axisLocked.current !== "x") return;
@@ -89,13 +147,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
     setDragX(dxClamped);
   };
 
-  const onTouchEnd = () => {
-    if (!swipeEnabled || axisLocked.current !== "x") {
-      touchStart.current = null;
-      axisLocked.current = null;
-      setDragX(0);
-      return;
-    }
+  const onPointerUp = () => {
     const dx = dragX;
     touchStart.current = null;
     axisLocked.current = null;
@@ -171,15 +223,21 @@ export const MushafView: React.FC<MushafViewProps> = ({
     audio.play().catch((e) => console.warn("Sayfa dinleme hatası", e));
   };
 
-  const handlePlayPage = () => {
-    if (isPlayingPage) {
+  const handlePlayPage = useCallback(() => {
+    if (isPlayingRef.current) {
       stopPageAudio();
     } else {
       isPlayingRef.current = true;
       setIsPlayingPage(true);
       playVerseAtIndex(0);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verses, stopPageAudio]);
+
+  // Panelden gelen "Dinle" isteği
+  useEffect(() => {
+    if (playPageSignal > 0) handlePlayPage();
+  }, [playPageSignal, handlePlayPage]);
 
   const fontClass =
     settings.arabicFont === "scheherazade"
@@ -204,106 +262,78 @@ export const MushafView: React.FC<MushafViewProps> = ({
 
   return (
     <div
-      className="max-w-4xl mx-auto"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onTouchCancel={onTouchEnd}
-      // Boşluğa dokununca menüyü aç (sadece mobil/tablet)
+      className={`mx-auto max-w-4xl ${swipeEnabled ? "h-full flex flex-col" : "space-y-4 sm:space-y-6"}`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      style={{ cursor: dragX !== 0 ? "grabbing" : "grab" }}
+      // Boşluğa dokununca menüyü aç
       onClick={() => onOpenMenu?.()}
     >
-      {/* Mushaf Page Frame */}
+      {/* Mushaf Page Frame - çerçevesiz, ekranın tamamı */}
       <div
+        ref={frameRef}
         className={[
-          "p-4 sm:p-6 lg:p-10 rounded-2xl sm:rounded-3xl bg-white border-2 border-emerald-600/30 shadow-xl shadow-stone-950/5 relative",
+          "relative",
+          swipeEnabled ? "mushaf-fit-frame" : "p-4 sm:p-6 lg:p-10",
           enterDir === "next"
             ? "mushaf-page-enter-next"
             : enterDir === "prev"
               ? "mushaf-page-enter-prev"
               : "",
         ].join(" ")}
-        style={
-          dragX !== 0
+        style={{
+          padding: swipeEnabled ? "calc(0.5rem * var(--fit, 1))" : undefined,
+          ...(dragX !== 0
             ? {
                 transform: `perspective(1600px) translateX(${dragX}px) rotateY(${dragX / 32}deg)`,
                 transition: "none",
               }
-            : { transition: "transform 300ms cubic-bezier(0.22, 0.9, 0.3, 1)" }
-        }
+            : {
+                transition: "transform 300ms cubic-bezier(0.22, 0.9, 0.3, 1)",
+              }),
+        }}
       >
-        {/* Top Header of Mushaf Page */}
-        <div className="flex items-center justify-between pb-3 sm:pb-4 mb-4 sm:mb-6 border-b border-stone-200/80 text-[10px] sm:text-xs font-semibold text-stone-500">
-          <span className="flex items-center gap-1 sm:gap-1.5 min-w-0">
-            <span className="text-emerald-700 font-bold">
-              {currentJuz}. Cüz
-            </span>
-            <span>·</span>
-            <span className="truncate">
-              {currentChapter?.translated_name.name} Sûresi
-            </span>
+        {/* Üst satır bilgi alanı: görünmez, yalnızca düzeni tutar */}
+        <div className="mushaf-fit-header flex items-center justify-between">
+          <span className="text-[10px] sm:text-xs font-semibold text-stone-400 opacity-0 select-none pointer-events-none">
+            {currentJuz}. Cüz · {currentChapter?.translated_name.name} Sûresi
           </span>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Mobil/tablet mod geçişi */}
-            {onDisplayModeChange && (
-              <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-stone-100 border border-stone-200">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDisplayModeChange("word-by-word");
-                  }}
-                  className={`px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold transition-all ${
-                    displayMode === "word-by-word"
-                      ? "bg-white text-emerald-700 shadow-sm"
-                      : "text-stone-500"
-                  }`}
-                >
-                  Kelime Meali
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDisplayModeChange("mushaf");
-                  }}
-                  className={`px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold transition-all ${
-                    displayMode === "mushaf"
-                      ? "bg-white text-emerald-700 shadow-sm"
-                      : "text-stone-500"
-                  }`}
-                >
-                  Mushaf
-                </button>
-              </div>
+          {/* Sayfa dinleme - küçük ve yumuşak */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePlayPage();
+            }}
+            disabled={verses.length === 0}
+            data-no-swipe
+            aria-label={
+              isPlayingPage ? "Sayfa dinlemeyi durdur" : "Sayfayı dinle"
+            }
+            className={`p-2 rounded-full transition-all ${
+              isPlayingPage
+                ? "bg-amber-500 text-white shadow-md"
+                : "text-stone-300 hover:text-emerald-700 hover:bg-stone-100"
+            } disabled:opacity-30 disabled:pointer-events-none`}
+          >
+            {isPlayingPage ? (
+              <Square className="w-4 h-4" />
+            ) : (
+              <Play className="w-4 h-4 fill-current" />
             )}
-
-            {/* Sayfa dinleme butonu (masaüstünde yazı, mobilde ikon) */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePlayPage();
-              }}
-              disabled={verses.length === 0}
-              className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                isPlayingPage
-                  ? "bg-amber-500 text-white shadow-sm"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-              } disabled:opacity-40 disabled:pointer-events-none`}
-              title={isPlayingPage ? "Sayfa Dinlemeyi Durdur" : "Sayfayı Dinle"}
-            >
-              {isPlayingPage ? (
-                <Square className="w-3.5 h-3.5" />
-              ) : (
-                <Play className="w-3.5 h-3.5 fill-current" />
-              )}
-              <span className="hidden lg:inline">
-                {isPlayingPage ? "Durdur" : "Sayfayı Dinle"}
-              </span>
-            </button>
-          </div>
+          </button>
         </div>
 
         {/* Content of Verses in Flow */}
-        <div className="space-y-4 sm:space-y-6">
+        <div
+          ref={contentRef}
+          className={`mushaf-fit-content ${swipeEnabled ? "flex flex-col" : "space-y-4 sm:space-y-6"}`}
+          style={{
+            gap: swipeEnabled ? "calc(0.75rem * var(--fit, 1))" : undefined,
+          }}
+        >
           {Object.entries(versesByChapter).map(([chIdStr, chVerses]) => {
             const chId = parseInt(chIdStr, 10);
             const chObj = chapters.find((c) => c.id === chId);
@@ -312,35 +342,71 @@ export const MushafView: React.FC<MushafViewProps> = ({
             );
 
             return (
-              <div key={chId} className="space-y-3 sm:space-y-4">
-                {/* Surah Banner if Surah starts on this page */}
+              <div
+                key={chId}
+                className={
+                  swipeEnabled ? "flex flex-col" : "space-y-3 sm:space-y-4"
+                }
+                style={{
+                  gap: swipeEnabled
+                    ? "calc(0.5rem * var(--fit, 1))"
+                    : undefined,
+                }}
+              >
+                {/* Sûre başlığı - yalnızca metin, çerçevesiz */}
                 {isFirstVerseInSurah && chObj && (
-                  <div className="text-center py-3 sm:py-4 px-3 sm:px-6 rounded-2xl bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-emerald-50 border border-emerald-300/60 my-2 sm:my-4 shadow-sm">
-                    <span className="text-[10px] sm:text-xs uppercase tracking-widest text-emerald-800 font-semibold block mb-1">
-                      {chObj.id}. SÛRE · {chObj.translated_name.name} (
-                      {chObj.verses_count} Âyet)
-                    </span>
-                    <span
+                  <div className="text-center">
+                    <div
                       dir="rtl"
-                      className="font-arabic text-2xl sm:text-3xl font-bold text-emerald-900 block"
+                      className="font-arabic font-bold text-stone-800"
+                      style={{
+                        fontSize: swipeEnabled
+                          ? "calc(1.5rem * var(--fit, 1))"
+                          : "1.875rem",
+                      }}
                     >
                       سُورَةُ {chObj.name_arabic}
-                    </span>
+                    </div>
                     {chObj.bismillah_pre && (
                       <div
                         dir="rtl"
-                        className="font-arabic text-xl sm:text-2xl text-stone-700 mt-2 sm:mt-3"
+                        className="font-arabic text-stone-500"
+                        style={{
+                          fontSize: swipeEnabled
+                            ? "calc(1.1rem * var(--fit, 1))"
+                            : "1.5rem",
+                          marginTop: swipeEnabled
+                            ? "calc(0.35rem * var(--fit, 1))"
+                            : "0.5rem",
+                        }}
                       >
-                        بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                        بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                       </div>
                     )}
+                    <div
+                      className="mx-auto my-2 w-16 h-px"
+                      style={{
+                        background: "var(--border-color)",
+                        marginTop: swipeEnabled
+                          ? "calc(0.4rem * var(--fit, 1))"
+                          : "0.5rem",
+                        marginBottom: swipeEnabled
+                          ? "calc(0.3rem * var(--fit, 1))"
+                          : "0.4rem",
+                      }}
+                    />
                   </div>
                 )}
 
                 {/* Verses Flow with Hover Badges */}
                 <div
                   dir="rtl"
-                  className="flex flex-wrap items-center justify-start gap-y-2.5 sm:gap-y-3.5 gap-x-0.5 sm:gap-x-1 sm:gap-x-1.5 leading-loose text-right"
+                  className="flex flex-wrap items-center justify-center gap-x-0.5 sm:gap-x-1 sm:gap-x-1.5 leading-loose text-center"
+                  style={{
+                    rowGap: swipeEnabled
+                      ? "calc(0.5rem * var(--fit, 1))"
+                      : undefined,
+                  }}
                 >
                   {chVerses.map((v) => (
                     <React.Fragment key={v.id}>
@@ -370,7 +436,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
         {/* Page Footer Navigation */}
         {swipeEnabled ? (
           // Mobilde parmakla kaydırma var: yalnızca sayfa numarası
-          <div className="pt-4 mt-6 sm:mt-8 border-t border-stone-200/80 flex justify-center">
+          <div className="mushaf-fit-footer pt-2.5 border-t border-stone-200/80 flex justify-center">
             <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700">
               {pageNumber}
             </span>
