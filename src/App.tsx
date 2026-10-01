@@ -100,8 +100,6 @@ export default function App() {
   const [activePlayingVerseKey, setActivePlayingVerseKey] = useState<
     string | null
   >(null);
-  // Sayfayı sesli dinleme tetiği (panelden gelen istek)
-  const [playPageSignal, setPlayPageSignal] = useState(0);
 
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -486,13 +484,11 @@ export default function App() {
           onJumpToJuz={handleJumpToJuz}
           currentPage={mushafPageNumber}
           currentJuz={currentJuz}
-          onOpenSearch={() => setIsSearchOpen(true)}
           onOpenBookmarks={() => setIsBookmarksOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
           onSwitchToWordMode={() =>
             setSettings((s) => ({ ...s, displayMode: "word-by-word" }))
           }
-          onPlayPage={() => setPlayPageSignal((n) => n + 1)}
         />
 
         {/* Center Main Reader Content Area */}
@@ -615,7 +611,6 @@ export default function App() {
               onPageChange={handleJumpToPage}
               onSpeakWord={handlePlayWordAudio}
               activePlayingWordId={activePlayingWordId}
-              playPageSignal={playPageSignal}
             />
           ) : (
             /* Mode 2: Word-by-Word Verse Cards */

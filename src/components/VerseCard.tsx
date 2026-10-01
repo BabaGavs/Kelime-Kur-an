@@ -74,17 +74,7 @@ export const VerseCard: React.FC<VerseCardProps> = ({
       className="p-3 sm:p-5 lg:p-6 rounded-2xl bg-white border border-stone-200/90 shadow-sm transition-all hover:shadow-md hover:border-emerald-500/30"
     >
       {/* Verse Top Bar */}
-      <div className="flex items-center justify-between pb-2 sm:pb-3 mb-3 sm:mb-4 border-b border-stone-100 text-xs">
-        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-          <span className="inline-flex items-center justify-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg bg-emerald-50 text-emerald-800 font-semibold tracking-wide text-[10px] sm:text-xs">
-            {verse.verse_key}
-          </span>
-          <span className="text-stone-600 font-medium hidden sm:inline truncate">
-            {chapter.translated_name.name} · {verse.page_number}. Sayfa ·{" "}
-            {verse.juz_number}. Cüz
-          </span>
-        </div>
-
+      <div className="flex items-center justify-end pb-2 sm:pb-3 mb-3 sm:mb-4 border-b border-stone-100 text-xs">
         <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
           <button
             onClick={() => onPlayVerseAudio(verse)}
@@ -170,9 +160,6 @@ export const VerseCard: React.FC<VerseCardProps> = ({
             settings.translationSource === "both") &&
             diyanetTranslation && (
               <div className="text-xs sm:text-sm sm:text-base leading-relaxed pl-2.5 sm:pl-3.5 border-l-2 border-emerald-500/70">
-                <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-800 block mb-0.5">
-                  Diyanet İşleri Meali:
-                </span>
                 <p className="font-serif italic text-stone-800">
                   {diyanetTranslation}
                 </p>

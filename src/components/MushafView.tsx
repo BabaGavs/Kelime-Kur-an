@@ -19,8 +19,6 @@ interface MushafViewProps {
   /** Çift dokunuş: kelimenin telaffuzunu seslendir */
   onSpeakWord: (word: Word) => void;
   activePlayingWordId?: number | null;
-  /** Panelden "Dinle" isteği için sayaç */
-  playPageSignal?: number;
 }
 
 export const MushafView: React.FC<MushafViewProps> = ({
@@ -31,7 +29,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
   onPageChange,
   onSpeakWord,
   activePlayingWordId,
-  playPageSignal = 0,
 }) => {
   const [isPlayingPage, setIsPlayingPage] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -136,11 +133,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
       playVerseAtIndex(0);
     }
   }, [playVerseAtIndex, stopPageAudio]);
-
-  // Panelden gelen "Dinle" isteği
-  useEffect(() => {
-    if (playPageSignal > 0) handlePlayPage();
-  }, [playPageSignal, handlePlayPage]);
 
   const fontClass =
     settings.arabicFont === "scheherazade"

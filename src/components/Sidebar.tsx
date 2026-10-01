@@ -2,14 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Chapter } from "../types/quran";
 import {
   Search,
-  MapPin,
   Compass,
   Book,
   X,
   Settings,
   Bookmark,
   BookOpen,
-  Volume2,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -23,12 +21,9 @@ interface SidebarProps {
   currentPage: number;
   currentJuz: number;
   /* Panel içi aksiyonlar */
-  onOpenSearch?: () => void;
   onOpenSettings?: () => void;
   onOpenBookmarks?: () => void;
   onSwitchToWordMode?: () => void;
-  /** Sayfayı sesli dinle */
-  onPlayPage?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -41,17 +36,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onJumpToJuz,
   currentPage,
   currentJuz,
-  onOpenSearch,
   onOpenSettings,
   onOpenBookmarks,
   onSwitchToWordMode,
-  onPlayPage,
 }) => {
-  const [activeTab, setActiveTab] = useState<"surahs" | "juz" | "pages">(
-    "surahs",
-  );
+  const [activeTab, setActiveTab] = useState<"surahs" | "juz">("surahs");
   const [filterText, setFilterText] = useState("");
-  const [pageInput, setPageInput] = useState("");
 
   const filteredChapters = chapters.filter((c) => {
     const q = filterText.toLowerCase().trim();
@@ -64,14 +54,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     );
   });
 
-  const handlePageJumpSubmit = (e: React.FormEvent) => {
+  // Arama kutusuna sayfa numarası yazılıp Enter'a basılınca o sayfaya gidilir
+  const isPageQuery = /^\d+$/.test(filterText.trim());
+  const pageQueryNum = parseInt(filterText.trim(), 10);
+  const pageQueryValid =
+    isPageQuery && pageQueryNum >= 1 && pageQueryNum <= 604;
+
+  const handleFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const p = parseInt(pageInput, 10);
-    if (p >= 1 && p <= 604) {
-      onJumpToPage(p);
-      setPageInput("");
-      onClose();
-    }
+    if (!pageQueryValid) return;
+    onJumpToPage(pageQueryNum);
+    setFilterText("");
+    onClose();
   };
 
   return (
@@ -113,8 +107,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* Navigation Tabs (Sûreler, Cüzler, Sayfalar) */}
-        <div className="px-2 sm:px-3 pt-2 sm:pt-3 pb-1.5 sm:pb-2 grid grid-cols-3 gap-1 bg-stone-50/70 border-b border-stone-200">
+        {/* Navigation Tabs (Sûreler, Cüzler) */}
+        <div className="px-2 sm:px-3 pt-2 sm:pt-3 pb-1.5 sm:pb-2 grid grid-cols-2 gap-1 bg-stone-50/70 border-b border-stone-200">
           <button
             onClick={() => setActiveTab("surahs")}
             className={`py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1 sm:gap-1.5 ${
@@ -137,35 +131,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Compass className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             Cüzler
           </button>
-          <button
-            onClick={() => setActiveTab("pages")}
-            className={`py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1 sm:gap-1.5 ${
-              activeTab === "pages"
-                ? "bg-white text-emerald-700 shadow-sm font-semibold"
-                : "text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            Sayfalar
-          </button>
         </div>
 
         {/* Tab 1: Sûreler List & Filter */}
         {activeTab === "surahs" && (
           <div className="flex-1 flex flex-col min-h-0">
-            {/* Search Input for Sûre */}
-            <div className="p-2 sm:p-3 border-b border-stone-100">
+            {/* Arama kutusu: sûre adı/numarası veya sayfa numarası */}
+            <form
+              onSubmit={handleFilterSubmit}
+              className="p-2 sm:p-3 border-b border-stone-100"
+            >
               <div className="relative">
                 <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Sûre adı veya numarası ara..."
+                  inputMode="numeric"
+                  placeholder="Sûre veya sayfa ara..."
                   value={filterText}
                   onChange={(e) => setFilterText(e.target.value)}
                   className="w-full pl-8 sm:pl-9 pr-2 sm:pr-3 py-1 sm:py-1.5 text-[11px] sm:text-xs rounded-lg border border-stone-200 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 text-stone-900 placeholder:text-stone-400"
                 />
               </div>
-            </div>
+              {/* Sayfa numarası girildiğinde doğrudan o sayfaya gidilir */}
+              {pageQueryValid ? (
+                <button
+                  type="submit"
+                  className="mt-1.5 w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] sm:text-xs rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-colors"
+                >
+                  <span className="font-semibold">
+                    {pageQueryNum}. sayfaya git
+                  </span>
+                  <span className="text-emerald-600">Aç ↵</span>
+                </button>
+              ) : (
+                <p className="mt-1.5 px-0.5 text-[10px] sm:text-[11px] text-stone-400">
+                  Sayfa numarası yazıp Enter'a basın (şu an {currentPage}.
+                  sayfa)
+                </p>
+              )}
+            </form>
 
             {/* Scrollable list of chapters */}
             <div className="flex-1 overflow-y-auto divide-y divide-stone-100 p-1 sm:p-1.5">
@@ -263,85 +267,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Tab 3: Sayfalar (1 - 604) */}
-        {activeTab === "pages" && (
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 flex flex-col">
-            <form onSubmit={handlePageJumpSubmit} className="mb-3 sm:mb-4">
-              <label className="block text-[10px] sm:text-xs font-medium text-stone-700 mb-1 sm:mb-1.5">
-                Sayfa Numarasına Git (1 – 604):
-              </label>
-              <div className="flex gap-1.5 sm:gap-2">
-                <input
-                  type="number"
-                  min={1}
-                  max={604}
-                  placeholder={`Mevcut: ${currentPage}`}
-                  value={pageInput}
-                  onChange={(e) => setPageInput(e.target.value)}
-                  className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-xl border border-stone-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-stone-900"
-                />
-                <button
-                  type="submit"
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] sm:text-xs font-semibold shadow-sm transition-colors"
-                >
-                  Aç
-                </button>
-              </div>
-            </form>
-
-            <div className="text-[10px] sm:text-xs font-medium text-stone-500 mb-1.5 sm:mb-2">
-              Hızlı Sayfa Atlama:
-            </div>
-            <div className="grid grid-cols-4 gap-1 sm:gap-1.5 max-h-72 overflow-y-auto p-1 border border-stone-100 rounded-xl">
-              {[
-                1, 2, 50, 77, 106, 128, 151, 177, 187, 208, 221, 249, 282, 332,
-                404, 500, 562, 595, 604,
-              ].map((p) => (
-                <button
-                  key={p}
-                  onClick={() => {
-                    onJumpToPage(p);
-                    onClose();
-                  }}
-                  className={`py-1 sm:py-1.5 px-1 sm:px-2 text-[10px] sm:text-xs rounded-lg font-mono text-center transition-colors ${
-                    currentPage === p
-                      ? "bg-emerald-600 text-white font-bold"
-                      : "bg-stone-100 hover:bg-emerald-50 hover:text-emerald-700 text-stone-700"
-                  }`}
-                >
-                  sf {p}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Alt aksiyon çubuğu: arama, yer imleri, ayarlar, mod değişimi */}
-        <div className="p-2 sm:p-3 border-t border-stone-200 bg-stone-50/70 grid grid-cols-5 gap-1 sm:gap-1.5">
-          {onPlayPage && (
-            <button
-              onClick={() => {
-                onPlayPage();
-                onClose();
-              }}
-              className="flex flex-col items-center gap-1 py-2 rounded-xl text-[10px] font-medium text-stone-600 hover:bg-white hover:text-emerald-700 transition-colors"
-            >
-              <Volume2 className="w-4 h-4" />
-              <span>Dinle</span>
-            </button>
-          )}
-          {onOpenSearch && (
-            <button
-              onClick={() => {
-                onOpenSearch();
-                onClose();
-              }}
-              className="flex flex-col items-center gap-1 py-2 rounded-xl text-[10px] font-medium text-stone-600 hover:bg-white hover:text-emerald-700 transition-colors"
-            >
-              <Search className="w-4 h-4" />
-              <span>Arama</span>
-            </button>
-          )}
+        {/* Alt aksiyon çubuğu: yer imleri, mod değişimi, ayarlar */}
+        <div className="p-2 sm:p-3 border-t border-stone-200 bg-stone-50/70 grid grid-cols-3 gap-1 sm:gap-1.5">
           {onOpenBookmarks && (
             <button
               onClick={() => {
