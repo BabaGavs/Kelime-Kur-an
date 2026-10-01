@@ -616,11 +616,6 @@ export default function App() {
               selectedWordId={selectedWord?.id}
               activePlayingWordId={activePlayingWordId}
               onPlayWordAudio={handlePlayWordAudio}
-              swipeEnabled
-              displayMode={settings.displayMode}
-              onDisplayModeChange={(mode) =>
-                setSettings((s) => ({ ...s, displayMode: mode }))
-              }
               onOpenMenu={() => setIsSidebarOpen(true)}
               playPageSignal={playPageSignal}
             />
