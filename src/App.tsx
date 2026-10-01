@@ -612,10 +612,8 @@ export default function App() {
               chapters={chapters}
               settings={settings}
               onPageChange={handleJumpToPage}
-              onSelectWord={handleSelectWord}
-              selectedWordId={selectedWord?.id}
+              onSpeakWord={handlePlayWordAudio}
               activePlayingWordId={activePlayingWordId}
-              onPlayWordAudio={handlePlayWordAudio}
               onOpenMenu={() => setIsSidebarOpen(true)}
               playPageSignal={playPageSignal}
             />

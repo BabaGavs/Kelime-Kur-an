@@ -16,10 +16,9 @@ interface MushafViewProps {
   chapters: Chapter[];
   settings: AppSettings;
   onPageChange: (newPage: number) => void;
-  onSelectWord: (word: Word, verse: Verse) => void;
-  selectedWordId?: number | null;
+  /** Çift dokunuş: kelimenin telaffuzunu seslendir */
+  onSpeakWord: (word: Word) => void;
   activePlayingWordId?: number | null;
-  onPlayWordAudio: (word: Word) => void;
   /** Boşluğa dokununca menüyü aç */
   onOpenMenu?: () => void;
   /** Panelden "Dinle" isteği için sayaç */
@@ -32,10 +31,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
   chapters,
   settings,
   onPageChange,
-  onSelectWord,
-  selectedWordId,
+  onSpeakWord,
   activePlayingWordId,
-  onPlayWordAudio,
   onOpenMenu,
   playPageSignal = 0,
 }) => {
@@ -163,6 +160,18 @@ export const MushafView: React.FC<MushafViewProps> = ({
     versesByChapter[chId].push(v);
   });
 
+  // Konum bilgisi: cüz, sûre sayısı ve sûre adları
+  const currentJuz = verses.length > 0 ? verses[0].juz_number : 1;
+  const chapterList = Object.keys(versesByChapter).map(Number);
+  const primaryChapter = chapters.find((c) => c.id === chapterList[0]);
+  const surahNames =
+    chapterList
+      .map((id) => chapters.find((c) => c.id === id)?.translated_name.name)
+      .filter(Boolean)
+      .join(" · ") ||
+    primaryChapter?.translated_name.name ||
+    "";
+
   const hasPrev = pageNumber > 1;
   const hasNext = pageNumber < 604;
 
@@ -196,9 +205,15 @@ export const MushafView: React.FC<MushafViewProps> = ({
             } disabled:opacity-30 disabled:pointer-events-none`}
           >
             {isPlayingPage ? (
-              <Square className="w-4 h-4" />
+              <>
+                <Square className="w-4 h-4" />
+                <span>Durdur</span>
+              </>
             ) : (
-              <Play className="w-4 h-4 fill-current" />
+              <>
+                <Play className="w-4 h-4 fill-current" />
+                <span>Sayfayı Dinle</span>
+              </>
             )}
           </button>
         </div>
@@ -269,10 +284,9 @@ export const MushafView: React.FC<MushafViewProps> = ({
                           alwaysShowMeaning={settings.alwaysShowWordMeaning}
                           fontClass={fontClass}
                           fontSizeMultiplier={settings.fontSizeMultiplier}
-                          isSelected={selectedWordId === w.id}
+                          isSelected={false}
                           activePlayingWordId={activePlayingWordId}
-                          onSelectWord={onSelectWord}
-                          onPlayWordAudio={onPlayWordAudio}
+                          onSpeakWord={onSpeakWord}
                         />
                       ))}
                     </React.Fragment>
@@ -284,36 +298,49 @@ export const MushafView: React.FC<MushafViewProps> = ({
         </div>
 
         {/* Sayfa gezinme - Arapça yönü: sonraki sola, önceki sağa */}
-        <div className="mushaf-fit-footer flex items-center justify-between gap-2 pt-2 mt-1 border-t border-stone-200/80">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onPageChange(pageNumber + 1);
-            }}
-            disabled={!hasNext}
-            className="group flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-stone-400 hover:text-emerald-700 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none transition-colors"
-            aria-label="Sonraki sayfa"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Sonraki</span>
-          </button>
+        <div className="mushaf-fit-footer pt-2 mt-1 border-t border-stone-200/80">
+          {/* Sol altta konum bilgisi */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] sm:text-[11px] text-stone-400 font-medium truncate">
+              {currentJuz}. Cüz ·{" "}
+              {chapterList.length > 1
+                ? `${chapterList.length} Sûre`
+                : `${primaryChapter?.id ?? 1}. Sûre`}{" "}
+              · {surahNames}
+            </span>
+          </div>
 
-          <span className="font-mono text-[11px] sm:text-xs text-stone-400 tabular-nums">
-            {pageNumber} / 604
-          </span>
+          <div className="flex items-center justify-between gap-2 mt-1.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPageChange(pageNumber + 1);
+              }}
+              disabled={!hasNext}
+              className="group flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-stone-400 hover:text-emerald-700 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none transition-colors"
+              aria-label="Sonraki sayfa"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Sonraki</span>
+            </button>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onPageChange(pageNumber - 1);
-            }}
-            disabled={!hasPrev}
-            className="group flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-stone-400 hover:text-emerald-700 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none transition-colors"
-            aria-label="Önceki sayfa"
-          >
-            <span className="hidden sm:inline">Önceki</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+            <span className="font-mono text-[11px] sm:text-xs text-stone-400 tabular-nums">
+              {pageNumber}
+            </span>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPageChange(pageNumber - 1);
+              }}
+              disabled={!hasPrev}
+              className="group flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-stone-400 hover:text-emerald-700 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none transition-colors"
+              aria-label="Önceki sayfa"
+            >
+              <span className="hidden sm:inline">Önceki</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

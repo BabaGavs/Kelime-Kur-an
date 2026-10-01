@@ -156,10 +156,9 @@ export const VerseCard: React.FC<VerseCardProps> = ({
             alwaysShowMeaning={settings.alwaysShowWordMeaning}
             fontClass={fontClass}
             fontSizeMultiplier={settings.fontSizeMultiplier}
-            isSelected={selectedWordId === word.id}
+            isSelected={false}
             activePlayingWordId={activePlayingWordId}
-            onSelectWord={onSelectWord}
-            onPlayWordAudio={onPlayWordAudio}
+            onSpeakWord={onPlayWordAudio}
           />
         ))}
       </div>

@@ -6,68 +6,55 @@ interface WordBadgeProps {
   verse: Verse;
   chapterName?: string;
   alwaysShowMeaning: boolean;
-  onSelectWord: (word: Word, verse: Verse) => void;
+  /** Çift dokunuş: kelimenin telaffuzunu seslendir */
+  onSpeakWord: (word: Word) => void;
   isSelected: boolean;
   fontClass: string;
   fontSizeMultiplier: number;
   activePlayingWordId?: number | null;
-  onPlayWordAudio?: (word: Word) => void;
 }
 
-const LONG_PRESS_MS = 450;
+const DOUBLE_TAP_MS = 320;
 
 export const WordBadge: React.FC<WordBadgeProps> = ({
   word,
   verse,
   alwaysShowMeaning,
-  onSelectWord,
+  onSpeakWord,
   isSelected,
   fontClass,
   fontSizeMultiplier,
+  activePlayingWordId,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [tapMeaning, setTapMeaning] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const pressTimer = useRef<number | null>(null);
-  const longPressFired = useRef(false);
+  const lastTap = useRef(0);
 
   const isEndOfAyah = word.char_type_name === "end";
   const turkishMeaning = word.translation?.text || "";
+  const isPlaying = activePlayingWordId === word.id;
 
-  const clearPress = () => {
-    if (pressTimer.current !== null) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
-  };
-
-  // Dokunma: kisa basış -> mana, uzun basış -> bilgi kutusu
-  const onPointerDown = (e: React.PointerEvent) => {
-    if (e.pointerType === "mouse") return;
+  // Tek dokunuş: manası. Çift dokunuş: telaffuz sesi.
+  const handleActivate = (e: React.PointerEvent) => {
     e.stopPropagation();
-    longPressFired.current = false;
-    clearPress();
-    pressTimer.current = window.setTimeout(() => {
-      longPressFired.current = true;
+    const now = Date.now();
+
+    if (now - lastTap.current < DOUBLE_TAP_MS) {
+      // Çift dokunuş -> sesli oku
+      lastTap.current = 0;
       setTapMeaning(false);
-      onSelectWord(word, verse);
-    }, LONG_PRESS_MS);
-  };
-
-  const onPointerUp = (e: React.PointerEvent) => {
-    if (e.pointerType === "mouse") return;
-    e.stopPropagation();
-    clearPress();
-    if (longPressFired.current) {
-      longPressFired.current = false;
+      if (word.audio_url) onSpeakWord(word);
       return;
     }
-    if (turkishMeaning) setTapMeaning((v) => !v);
-  };
 
-  const onPointerLeave = () => {
-    clearPress();
-    setIsHovered(false);
+    lastTap.current = now;
+    if (turkishMeaning) setTapMeaning((v) => !v);
+
+    // Pencere ikinci dokunuşu beklesin
+    window.setTimeout(() => {
+      lastTap.current = 0;
+    }, DOUBLE_TAP_MS);
   };
 
   // Başka bir yere dokununca manayı kapat
@@ -81,8 +68,6 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
     document.addEventListener("pointerdown", onDoc);
     return () => document.removeEventListener("pointerdown", onDoc);
   }, [tapMeaning]);
-
-  useEffect(() => clearPress, []);
 
   // Ayet sonu isareti
   if (isEndOfAyah) {
@@ -101,7 +86,6 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
   return (
     <div
       ref={rootRef}
-      data-no-swipe
       className={`relative inline-flex flex-col items-center justify-center rounded-lg transition-all cursor-pointer group select-none ${
         isSelected
           ? "bg-emerald-500/20 ring-2 ring-emerald-500"
@@ -111,24 +95,25 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
       }`}
       style={{ padding: "calc(0.25rem) calc(0.375rem)" }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={onPointerLeave}
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerLeave}
+      onMouseLeave={() => setIsHovered(false)}
+      onPointerDown={handleActivate}
       onContextMenu={(e) => e.preventDefault()}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (!longPressFired.current) onSelectWord(word, verse);
-        longPressFired.current = false;
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleActivate(e as unknown as React.PointerEvent);
+        }
       }}
       tabIndex={0}
       role="button"
-      aria-label={`${word.text_uthmani}, anlamı: ${turkishMeaning}`}
+      aria-label={`${word.text_uthmani}, anlamı: ${turkishMeaning || "belirtilmemiş"}. Çift dokunuşla telaffuzu dinleyin.`}
     >
       {/* Arapça kelime */}
       <span
         dir="rtl"
-        className={`${fontClass} leading-relaxed tracking-wide text-stone-900 transition-colors group-hover:text-emerald-700`}
+        className={`${fontClass} leading-relaxed tracking-wide text-stone-900 transition-colors ${
+          isPlaying ? "text-emerald-700" : "group-hover:text-emerald-700"
+        }`}
         style={{
           fontSize: `calc(${1.75 * fontSizeMultiplier}rem * var(--fit, 1))`,
         }}
@@ -150,7 +135,7 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
         </span>
       )}
 
-      {/* Mobil: dokununca kelimenin altında manası */}
+      {/* Dokununca kelimenin altında manası */}
       {tapMeaning && !alwaysShowMeaning && turkishMeaning && (
         <span className="word-tap-meaning" role="status">
           {turkishMeaning}
