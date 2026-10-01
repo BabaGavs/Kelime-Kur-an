@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Verse, Chapter, AppSettings, Word } from "../types/quran";
 import { WordBadge } from "./WordBadge";
-import { ChevronLeft, ChevronRight, Play, Square } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Square, Menu } from "lucide-react";
 import { getVerseAudioUrl } from "../services/quranApi";
 
 interface MushafViewProps {
@@ -19,7 +19,7 @@ interface MushafViewProps {
   /** Çift dokunuş: kelimenin telaffuzunu seslendir */
   onSpeakWord: (word: Word) => void;
   activePlayingWordId?: number | null;
-  /** Boşluğa dokununca menüyü aç */
+  /** Fihrist menüsünü aç */
   onOpenMenu?: () => void;
   /** Panelden "Dinle" isteği için sayaç */
   playPageSignal?: number;
@@ -176,19 +176,35 @@ export const MushafView: React.FC<MushafViewProps> = ({
   const hasNext = pageNumber < 604;
 
   return (
-    <div
-      className="mx-auto max-w-4xl h-full flex flex-col"
-      // Boşluğa dokununca menüyü aç
-      onClick={() => onOpenMenu?.()}
-    >
+    <div className="mx-auto max-w-4xl h-full flex flex-col relative">
+      {/* Fihrist düğmesi - sol üstte sayfa dokunuş alanının dışında */}
+      {onOpenMenu && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenMenu();
+          }}
+          aria-label="Fihristi aç"
+          title="Fihrist"
+          className="absolute top-0 left-0 z-10 p-2 rounded-full text-stone-300 hover:text-emerald-700 hover:bg-stone-100 transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
+
       <div
         key={pageNumber}
         ref={frameRef}
         className="mushaf-fit-frame mushaf-page-enter"
         style={{ padding: "calc(0.75rem * var(--fit, 1))" }}
       >
-        {/* Ses düğmesi - küçük ve yumuşak */}
-        <div className="mushaf-fit-header flex items-center justify-end">
+        {/* Üst satır: fihrist boşluğu + sayfa dinleme metni */}
+        <div className="mushaf-fit-header flex items-center gap-2">
+          {/* Fihrist düğmesi için yer tutucu */}
+          <div className="w-6 shrink-0" />
+
+          <span className="flex-1" />
+
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -198,23 +214,13 @@ export const MushafView: React.FC<MushafViewProps> = ({
             aria-label={
               isPlayingPage ? "Sayfa dinlemeyi durdur" : "Sayfayı dinle"
             }
-            className={`p-2 rounded-full transition-all ${
+            className={`text-[11px] sm:text-xs font-medium transition-colors ${
               isPlayingPage
-                ? "bg-amber-500 text-white shadow-md"
-                : "text-stone-300 hover:text-emerald-700 hover:bg-stone-100"
+                ? "text-amber-600"
+                : "text-stone-400 hover:text-emerald-700"
             } disabled:opacity-30 disabled:pointer-events-none`}
           >
-            {isPlayingPage ? (
-              <>
-                <Square className="w-4 h-4" />
-                <span>Durdur</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 fill-current" />
-                <span>Sayfayı Dinle</span>
-              </>
-            )}
+            {isPlayingPage ? "Durduruluyor…" : "Sayfayı Dinle"}
           </button>
         </div>
 
