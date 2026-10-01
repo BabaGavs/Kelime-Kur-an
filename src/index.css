@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-arabic {
+    font-family: 'Amiri', 'Traditional Arabic', 'Scheherazade New', 'Noto Naskh Arabic', serif;
+  }
+  .font-scheherazade {
+    font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif;
+  }
+}
+
+/* Custom Sepia & Dark color styles */
+[data-theme="sepia"] {
+  --bg-primary: #fbf7ee;
+  --bg-secondary: #f4ede0;
+  --text-primary: #382c1e;
+  --text-secondary: #6e5842;
+  --border-color: #e5d8c3;
+  --accent-color: #047857;
+}

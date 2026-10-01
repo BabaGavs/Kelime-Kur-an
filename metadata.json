@@ -1,0 +1,6 @@
+{
+  "name": "Kelime Mealli Kur'an-ı Kerim",
+  "description": "Üzerine imleç gelindiğinde bağlamıyla Türkçe kelime manasını, okunuşunu ve âyet mealini gösteren etkileşimli Kur'an-ı Kerim okuma uygulaması.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
