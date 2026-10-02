@@ -488,15 +488,18 @@ export default function App() {
               : "overflow-y-auto"
           }`}
         >
-          {/* Fihrist düğmesi - sol üstte, sayfa dokunuş alanının dışında */}
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            aria-label="Fihristi aç"
-            title="Fihrist"
-            className="absolute top-2 left-2 z-20 p-2 rounded-full text-stone-300 hover:text-emerald-700 hover:bg-stone-100 transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {/* Fihrist düğmesi - Kelime Meali modunda; Mushaf modunda
+              MushafView'ın kendi başlığında yer alır */}
+          {settings.displayMode !== "mushaf" && (
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              aria-label="Fihristi aç"
+              title="Fihrist"
+              className="absolute top-2 left-2 z-20 p-2 rounded-full text-stone-300 hover:text-emerald-700 hover:bg-stone-100 transition-colors"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
           {/* Chapter Top Hero / Information Card */}
           {settings.displayMode !== "mushaf" && (
             <div className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-800 via-emerald-700 to-teal-800 text-white shadow-lg relative overflow-hidden">
@@ -598,6 +601,7 @@ export default function App() {
               chapters={chapters}
               settings={settings}
               onPageChange={handleJumpToPage}
+              onOpenMenu={() => setIsSidebarOpen(true)}
               isPageBookmarked={pageBookmarks.includes(mushafPageNumber)}
               onTogglePageBookmark={handleTogglePageBookmark}
             />

@@ -13,6 +13,7 @@ import {
   Play,
   Square,
   Bookmark,
+  Menu,
 } from "lucide-react";
 import { getVerseAudioUrl } from "../services/quranApi";
 
@@ -22,6 +23,8 @@ interface MushafViewProps {
   chapters: Chapter[];
   settings: AppSettings;
   onPageChange: (newPage: number) => void;
+  /** Fihrist menüsünü aç */
+  onOpenMenu?: () => void;
   /** Bu sayfa yer imlerinde mi */
   isPageBookmarked?: boolean;
   onTogglePageBookmark?: (page: number) => void;
@@ -33,6 +36,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
   chapters,
   settings,
   onPageChange,
+  onOpenMenu,
   isPageBookmarked = false,
   onTogglePageBookmark,
 }) => {
@@ -176,10 +180,27 @@ export const MushafView: React.FC<MushafViewProps> = ({
         key={pageNumber}
         ref={frameRef}
         className="mushaf-fit-frame mushaf-page-enter"
-        style={{ padding: "calc(0.75rem * var(--fit, 1))" }}
+        style={{
+          paddingTop: "calc(0.75rem * var(--fit, 1))",
+          paddingBottom: "calc(0.15rem * var(--fit, 1))",
+        }}
       >
-        {/* Üst satır: solda konum bilgisi, sağda sayfa dinleme */}
+        {/* Üst satır: solda fihrist + konum bilgisi, sağda sayfa dinleme */}
         <div className="mushaf-fit-header flex items-center gap-2">
+          {onOpenMenu && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenMenu();
+              }}
+              aria-label="Fihristi aç"
+              title="Fihrist"
+              className="-ml-1 shrink-0 p-1 -translate-y-px rounded-full text-stone-300 hover:text-emerald-700 hover:bg-stone-100 transition-colors"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
+
           <span className="text-[10px] sm:text-[11px] text-stone-400 font-medium truncate">
             {currentJuz}. Cüz ·{" "}
             {chapterList.length > 1
