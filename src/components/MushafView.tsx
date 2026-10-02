@@ -55,6 +55,9 @@ export const MushafView: React.FC<MushafViewProps> = ({
 
     const fit = () => {
       frame.style.setProperty("--fit", "1");
+      // Stale layout'u engelle: --fit sıfırlandı, yerleşimi zorla yeniden hesapla
+      void content.getBoundingClientRect();
+
       // Oransal küçültme: taşma oranına göre ölçekle
       let scale = 1;
       for (let i = 0; i < 16; i++) {
@@ -63,23 +66,41 @@ export const MushafView: React.FC<MushafViewProps> = ({
         const ratio = content.clientHeight / content.scrollHeight;
         scale = Math.max(0.28, scale * ratio * 0.95);
         frame.style.setProperty("--fit", scale.toFixed(3));
+        // Yeni --fit uygulandı, yerleşimi tazele
+        void content.getBoundingClientRect();
       }
       frame.style.setProperty("--fit", scale.toFixed(3));
     };
 
     fit();
-    // Yazı tipleri ve düzen geç yerleşebilir -> birkaç gecikmeli ölçüm
+
+    // Yazı tipleri geç yüklenince satırlar kayar ve içerik taşabilir;
+    // bu yüzden yerleşim oturana kadar birkaç kez yeniden ölçüyoruz.
+    let cancelled = false;
+    const verify = (tries: number) => {
+      if (cancelled) return;
+      fit();
+      // İçerik, ölçümden sonra da büyüyebiliyor (font yerleşimi,
+      // geç gelen kelimeler). Bu yüzden koşulsuz birkaç kare tekrar ölçüyoruz.
+      if (tries > 0) requestAnimationFrame(() => verify(tries - 1));
+    };
+    const refit = () => verify(4);
     const timers = [
-      setTimeout(fit, 120),
-      setTimeout(fit, 400),
-      setTimeout(fit, 1000),
+      setTimeout(refit, 60),
+      setTimeout(refit, 200),
+      setTimeout(refit, 500),
+      setTimeout(refit, 1000),
+      setTimeout(refit, 1800),
     ];
-    window.addEventListener("resize", fit);
-    window.addEventListener("orientationchange", fit);
+    if (document.fonts?.ready) document.fonts.ready.then(refit);
+
+    window.addEventListener("resize", refit);
+    window.addEventListener("orientationchange", refit);
     return () => {
+      cancelled = true;
       timers.forEach(clearTimeout);
-      window.removeEventListener("resize", fit);
-      window.removeEventListener("orientationchange", fit);
+      window.removeEventListener("resize", refit);
+      window.removeEventListener("orientationchange", refit);
     };
   }, [pageNumber, verses, settings.fontSizeMultiplier]);
 
@@ -181,7 +202,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
         ref={frameRef}
         className="mushaf-fit-frame mushaf-page-enter"
         style={{
-          paddingTop: "calc(0.75rem * var(--fit, 1))",
+          // Üst/alt boşluk neredeyse sıfır: başlık ve gezinme kenara yaslanır
+          paddingTop: "calc(0.15rem * var(--fit, 1))",
           paddingBottom: "calc(0.15rem * var(--fit, 1))",
         }}
       >
@@ -254,7 +276,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
         <div
           ref={contentRef}
           className="mushaf-fit-content flex flex-col"
-          style={{ gap: "calc(0.75rem * var(--fit, 1))" }}
+          style={{ gap: "calc(0.45rem * var(--fit, 1))" }}
         >
           {Object.entries(versesByChapter).map(([chIdStr, chVerses]) => {
             const chObj = chapters.find((c) => c.id === parseInt(chIdStr, 10));
@@ -264,7 +286,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
               <div
                 key={chIdStr}
                 className="flex flex-col"
-                style={{ gap: "calc(0.5rem * var(--fit, 1))" }}
+                style={{ gap: "calc(0.3rem * var(--fit, 1))" }}
               >
                 {/* Sûre başlığı - yalnızca metin */}
                 {startsSurah && chObj && (
@@ -282,7 +304,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
                         className="mushaf-bismillah font-arabic"
                         style={{
                           fontSize: "calc(1.1rem * var(--fit, 1))",
-                          marginTop: "calc(0.35rem * var(--fit, 1))",
+                          marginTop: "calc(0.22rem * var(--fit, 1))",
                         }}
                       >
                         بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
@@ -292,8 +314,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
                       className="mx-auto w-16 h-px"
                       style={{
                         background: "var(--border-color)",
-                        marginTop: "calc(0.4rem * var(--fit, 1))",
-                        marginBottom: "calc(0.3rem * var(--fit, 1))",
+                        marginTop: "calc(0.28rem * var(--fit, 1))",
+                        marginBottom: "calc(0.18rem * var(--fit, 1))",
                       }}
                     />
                   </div>
@@ -302,8 +324,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
                 {/* Kelimeler */}
                 <div
                   dir="rtl"
-                  className="flex flex-wrap items-center justify-center gap-x-0.5 sm:gap-x-1 leading-loose text-center"
-                  style={{ rowGap: "calc(0.5rem * var(--fit, 1))" }}
+                  className="flex flex-wrap items-center justify-center gap-x-0.5 sm:gap-x-1 leading-tight text-center"
+                  style={{ rowGap: "calc(0.3rem * var(--fit, 1))" }}
                 >
                   {chVerses.map((v) => (
                     <React.Fragment key={v.id}>

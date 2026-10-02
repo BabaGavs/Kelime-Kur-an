@@ -482,10 +482,10 @@ export default function App() {
 
         {/* Center Main Reader Content Area */}
         <main
-          className={`relative flex-1 min-w-0 min-h-0 p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 ${
+          className={`relative flex-1 min-w-0 min-h-0 space-y-4 sm:space-y-6 ${
             settings.displayMode === "mushaf"
-              ? "overflow-hidden"
-              : "overflow-y-auto"
+              ? "overflow-hidden p-0"
+              : "overflow-y-auto p-3 sm:p-6 lg:p-8"
           }`}
         >
           {/* Fihrist düğmesi - Kelime Meali modunda; Mushaf modunda
