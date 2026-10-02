@@ -90,5 +90,4 @@ export interface AppSettings {
   fontSizeMultiplier: number;
   translationSource: TranslationSource;
   alwaysShowWordMeaning: boolean; // if false, only show on hover/tap
-  autoPlayWordAudio: boolean;
 }

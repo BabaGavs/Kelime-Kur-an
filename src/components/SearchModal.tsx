@@ -196,10 +196,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                       </div>
 
                       {translationText && (
-                        <p
-                          className="text-[10px] sm:text-xs text-stone-600 leading-relaxed font-serif line-clamp-2"
-                          dangerouslySetInnerHTML={{ __html: translationText }}
-                        />
+                        <p className="text-[10px] sm:text-xs text-stone-600 leading-relaxed font-serif line-clamp-2">
+                          {translationText}
+                        </p>
                       )}
                     </button>
                   );

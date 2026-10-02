@@ -91,12 +91,6 @@ export function transliterateToTurkish(text: string): string {
   return result;
 }
 
-export function getWordAudioUrl(audioUrl: string | null): string | null {
-  if (!audioUrl) return null;
-  if (audioUrl.startsWith("http")) return audioUrl;
-  return `${AUDIO_BASE_URL}/${audioUrl}`;
-}
-
 export function getVerseAudioUrl(
   chapterId: number,
   verseNumber: number,
@@ -104,6 +98,106 @@ export function getVerseAudioUrl(
   const chStr = padNumber(chapterId, 3);
   const vStr = padNumber(verseNumber, 3);
   return `https://verses.quran.com/Alafasy/mp3/${chStr}${vStr}.mp3`;
+}
+
+// Diyanet çevirisi HTML entity'leri (&quot; &amp; &#39; ...) kaçışlı döner.
+// Bunları gerçek karaktere çevirir, < > gibi etiketleri temizler.
+export function decodeHtmlEntities(text: string): string {
+  if (!text) return text;
+
+  let out = text.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "");
+
+  const named: Record<string, string> = {
+    quot: '"',
+    apos: "'",
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    nbsp: " ",
+    ldquo: '"',
+    rdquo: '"',
+    lsquo: "'",
+    rsquo: "'",
+    ndash: "–",
+    mdash: "—",
+    hellip: "…",
+  };
+
+  out = out.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (match, entity: string) => {
+    if (entity[0] === "#") {
+      const isHex = entity[1] === "x" || entity[1] === "X";
+      const code = parseInt(entity.slice(isHex ? 2 : 1), isHex ? 16 : 10);
+      return Number.isFinite(code) && code > 0
+        ? String.fromCodePoint(code)
+        : match;
+    }
+    const key = entity.toLowerCase();
+    return key in named ? named[key] : match;
+  });
+
+  return out;
+}
+
+// API'nin kelime anlamları yer yer İngilizce kalıyor.
+// En sık geçenleri Türkçeye çeviriyoruz (kalanı olduğu gibi bırakılır).
+const WORD_MEANING_TR: Record<string, string> = {
+  "de ki": "de ki",
+  qul: "de ki",
+  o: "O",
+  huwa: "O",
+  allah: "Allah",
+  "l-lahu": "Allah",
+  rabbe: "Rabbe",
+  birabbi: "Rabbe",
+  rabbine: "Rabbine",
+  "the evil": "şer",
+  evil: "şer",
+  sharri: "şer",
+  "the knots": "düğüm",
+  knots: "düğüm",
+  "al-ʿuqad": "düğüm",
+  "al-uqad": "düğüm",
+  "in sha':": "Allah dilerse",
+  insha: "Allah dilerse",
+  "al-mulk": "mülk",
+  "al-malik": "malik",
+  "ar-rahman": "Rahman",
+  "ar-raheem": "Rahim",
+};
+
+function turkishWordMeaning(text: string): string {
+  if (!text) return text;
+  const cleaned = text.trim();
+  const lower = cleaned.toLowerCase();
+  if (lower in WORD_MEANING_TR) return WORD_MEANING_TR[lower];
+  // Baştaki "(the)" gibi İngilizce kalıntıları at
+  const stripped = cleaned.replace(/^\(the\)\s*/i, "").trim();
+  const strippedLower = stripped.toLowerCase();
+  if (strippedLower in WORD_MEANING_TR) return WORD_MEANING_TR[strippedLower];
+  return cleaned;
+}
+
+// Kelime anlamlarını Türkçeleştirir, meal metinlerindeki entity'leri çözer
+function normalizeVerses(verses: Verse[]): Verse[] {
+  for (const verse of verses) {
+    for (const word of verse.words || []) {
+      if (word.translation?.text) {
+        word.translation.text = turkishWordMeaning(word.translation.text);
+      }
+      if (word.transliteration?.text) {
+        word.transliteration.text = transliterateToTurkish(
+          word.transliteration.text,
+        );
+      }
+    }
+    if (verse.translations) {
+      verse.translations = verse.translations.map((t) => ({
+        ...t,
+        text: decodeHtmlEntities(t.text || ""),
+      }));
+    }
+  }
+  return verses;
 }
 
 // Fâtiha'da besmele ayet değildir; API'de 1. âyet olarak gelir,
@@ -174,7 +268,7 @@ export async function getVersesByChapter(
   page: number = 1,
   perPage: number = 100,
 ): Promise<{ verses: Verse[]; totalVerses: number; totalPages: number }> {
-  const cacheKey = `verses_ch_v2_${chapterId}_p_${page}_sz_${perPage}`;
+  const cacheKey = `verses_ch_v3_${chapterId}_p_${page}_sz_${perPage}`;
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey);
   }
@@ -184,7 +278,7 @@ export async function getVersesByChapter(
     const fatihaData = (chapter1Local as any).verses as Verse[];
     if (fatihaData && fatihaData.length > 0) {
       const result = {
-        verses: fatihaData,
+        verses: normalizeVerses(fatihaData),
         totalVerses: fatihaData.length,
         totalPages: 1,
       };
@@ -198,6 +292,7 @@ export async function getVersesByChapter(
     const stored = localStorage.getItem(cacheKey);
     if (stored) {
       const parsed = JSON.parse(stored);
+      if (parsed?.verses) parsed.verses = normalizeVerses(parsed.verses);
       cache.set(cacheKey, parsed);
       return parsed;
     }
@@ -211,19 +306,9 @@ export async function getVersesByChapter(
   }
   const data = await res.json();
   const rawVerses: Verse[] = data.verses || [];
-  const verses =
-    chapterId === 1 ? stripBasmalaFromFatiha(rawVerses) : rawVerses;
-
-  // Convert transliterations to Turkish
-  for (const verse of verses) {
-    for (const word of verse.words) {
-      if (word.transliteration?.text) {
-        word.transliteration.text = transliterateToTurkish(
-          word.transliteration.text,
-        );
-      }
-    }
-  }
+  const verses = normalizeVerses(
+    chapterId === 1 ? stripBasmalaFromFatiha(rawVerses) : rawVerses,
+  );
 
   const pagination = data.pagination || {
     total_records: verses.length,
@@ -248,7 +333,7 @@ export async function getVersesByChapter(
 export async function getVersesByPage(
   pageNumber: number,
 ): Promise<{ verses: Verse[]; pageNumber: number }> {
-  const cacheKey = `verses_page_v2_${pageNumber}`;
+  const cacheKey = `verses_page_v3_${pageNumber}`;
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey);
   }
@@ -257,6 +342,7 @@ export async function getVersesByPage(
     const stored = localStorage.getItem(cacheKey);
     if (stored) {
       const parsed = JSON.parse(stored);
+      if (parsed?.verses) parsed.verses = normalizeVerses(parsed.verses);
       cache.set(cacheKey, parsed);
       return parsed;
     }
@@ -270,20 +356,11 @@ export async function getVersesByPage(
   const data = await res.json();
   const rawVerses: Verse[] = data.verses || [];
   // Fâtiha sayfasında besmele ayet olmaktan çıkarılıp başlığa alınır
-  const verses = rawVerses.some((v) => v.verse_key === "1:1")
-    ? stripBasmalaFromFatiha(rawVerses)
-    : rawVerses;
-
-  // Convert transliterations to Turkish
-  for (const verse of verses) {
-    for (const word of verse.words) {
-      if (word.transliteration?.text) {
-        word.transliteration.text = transliterateToTurkish(
-          word.transliteration.text,
-        );
-      }
-    }
-  }
+  const verses = normalizeVerses(
+    rawVerses.some((v) => v.verse_key === "1:1")
+      ? stripBasmalaFromFatiha(rawVerses)
+      : rawVerses,
+  );
 
   const result = {
     verses,
@@ -304,7 +381,7 @@ export async function getVersesByJuz(
   page: number = 1,
   perPage: number = 50,
 ): Promise<{ verses: Verse[]; totalVerses: number; totalPages: number }> {
-  const cacheKey = `verses_juz_${juzNumber}_p_${page}_sz_${perPage}`;
+  const cacheKey = `verses_juz_v3_${juzNumber}_p_${page}_sz_${perPage}`;
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey);
   }
@@ -315,18 +392,7 @@ export async function getVersesByJuz(
     throw new Error(`Cüz yüklenemedi (HTTP ${res.status})`);
   }
   const data = await res.json();
-  const verses: Verse[] = data.verses || [];
-
-  // Convert transliterations to Turkish
-  for (const verse of verses) {
-    for (const word of verse.words) {
-      if (word.transliteration?.text) {
-        word.transliteration.text = transliterateToTurkish(
-          word.transliteration.text,
-        );
-      }
-    }
-  }
+  const verses: Verse[] = normalizeVerses(data.verses || []);
 
   const pagination = data.pagination || {
     total_records: verses.length,
@@ -397,8 +463,15 @@ export async function searchQuran(
     throw new Error(`Arama gerçekleştirilemedi (HTTP ${res.status})`);
   }
   const data = await res.json();
+  const results = (data.search?.results || []).map((r: any) => ({
+    ...r,
+    translations: (r.translations || []).map((t: any) => ({
+      ...t,
+      text: decodeHtmlEntities(t.text || ""),
+    })),
+  }));
   return {
-    results: data.search?.results || [],
+    results,
     totalResults: data.search?.total_results || 0,
     totalPages: data.search?.total_pages || 1,
   };

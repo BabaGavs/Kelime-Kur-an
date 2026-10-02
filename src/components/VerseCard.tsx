@@ -16,11 +16,7 @@ interface VerseCardProps {
   chapter: Chapter;
   settings: AppSettings;
   isPlaying: boolean;
-  activePlayingWordId?: number | null;
   onPlayVerseAudio: (verse: Verse) => void;
-  onPlayWordAudio: (word: Word) => void;
-  onSelectWord: (word: Word, verse: Verse) => void;
-  selectedWordId?: number | null;
   isBookmarked: boolean;
   onToggleBookmark: (verse: Verse) => void;
 }
@@ -30,11 +26,7 @@ export const VerseCard: React.FC<VerseCardProps> = ({
   chapter,
   settings,
   isPlaying,
-  activePlayingWordId,
   onPlayVerseAudio,
-  onPlayWordAudio,
-  onSelectWord,
-  selectedWordId,
   isBookmarked,
   onToggleBookmark,
 }) => {
@@ -146,9 +138,6 @@ export const VerseCard: React.FC<VerseCardProps> = ({
             alwaysShowMeaning={settings.alwaysShowWordMeaning}
             fontClass={fontClass}
             fontSizeMultiplier={settings.fontSizeMultiplier}
-            isSelected={false}
-            activePlayingWordId={activePlayingWordId}
-            onSpeakWord={onPlayWordAudio}
           />
         ))}
       </div>

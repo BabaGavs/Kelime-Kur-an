@@ -6,59 +6,34 @@ interface WordBadgeProps {
   verse: Verse;
   chapterName?: string;
   alwaysShowMeaning: boolean;
-  /** Çift dokunuş: kelimenin telaffuzunu seslendir */
-  onSpeakWord: (word: Word) => void;
-  isSelected: boolean;
   fontClass: string;
   fontSizeMultiplier: number;
-  activePlayingWordId?: number | null;
 }
 
-const DOUBLE_TAP_MS = 320;
 const VIEWPORT_MARGIN = 8;
 
 export const WordBadge: React.FC<WordBadgeProps> = ({
   word,
   verse,
   alwaysShowMeaning,
-  onSpeakWord,
   fontClass,
   fontSizeMultiplier,
-  activePlayingWordId,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [tapMeaning, setTapMeaning] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const popRef = useRef<HTMLSpanElement>(null);
-  const lastTap = useRef(0);
 
   const isEndOfAyah = word.char_type_name === "end";
   const turkishMeaning = word.translation?.text || "";
-  const isPlaying = activePlayingWordId === word.id;
   const showTooltip = isHovered && !alwaysShowMeaning && !!turkishMeaning;
   const showTapMeaning = tapMeaning && !alwaysShowMeaning && !!turkishMeaning;
   const showPopup = showTooltip || showTapMeaning;
 
-  // Tek dokunuş: manası. Çift dokunuş: telaffuz sesi.
+  // Tek dokunuş: manası. Başka hiçbir tepki yok.
   const handleActivate = (e: React.PointerEvent) => {
     e.stopPropagation();
-    const now = Date.now();
-
-    if (now - lastTap.current < DOUBLE_TAP_MS) {
-      // Çift dokunuş -> sesli oku
-      lastTap.current = 0;
-      setTapMeaning(false);
-      if (word.audio_url) onSpeakWord(word);
-      return;
-    }
-
-    lastTap.current = now;
     if (turkishMeaning) setTapMeaning((v) => !v);
-
-    // Pencere ikinci dokunuşu beklesin
-    window.setTimeout(() => {
-      lastTap.current = 0;
-    }, DOUBLE_TAP_MS);
   };
 
   // Manayı ekran içinde tut: kelime soldaysa kutu sağa, sağdaysa sola kayar
@@ -177,14 +152,12 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
       }}
       tabIndex={0}
       role="button"
-      aria-label={`${word.text_uthmani}, anlamı: ${turkishMeaning || "belirtilmemiş"}. Çift dokunuşla telaffuzu dinleyin.`}
+      aria-label={`${word.text_uthmani}, anlamı: ${turkishMeaning || "belirtilmemiş"}`}
     >
       {/* Arapça kelime */}
       <span
         dir="rtl"
-        className={`${fontClass} leading-relaxed tracking-wide text-stone-900 transition-colors ${
-          isPlaying ? "text-emerald-700" : "group-hover:text-emerald-700"
-        }`}
+        className={`${fontClass} leading-relaxed tracking-wide text-stone-900 transition-colors group-hover:text-emerald-700`}
         style={{
           fontSize: `calc(${1.75 * fontSizeMultiplier}rem * var(--fit, 1))`,
         }}

@@ -6,12 +6,10 @@ import {
   getVersesByJuz,
   getChapterInfo,
   getVerseAudioUrl,
-  getWordAudioUrl,
 } from "./services/quranApi";
 import {
   Chapter,
   Verse,
-  Word,
   AppSettings,
   Bookmark,
   ChapterInfo,
@@ -24,7 +22,6 @@ import { SearchModal } from "./components/SearchModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { BookmarksModal } from "./components/BookmarksModal";
 import { ChapterDetailModal } from "./components/ChapterDetailModal";
-import { WordDrawer } from "./components/WordDrawer";
 import {
   Menu,
   Search,
@@ -44,7 +41,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontSizeMultiplier: 1.0,
   translationSource: 77, // Diyanet
   alwaysShowWordMeaning: false,
-  autoPlayWordAudio: false,
 };
 
 export default function App() {
@@ -91,12 +87,7 @@ export default function App() {
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
 
-  // Selected Word & Audio State
-  const [selectedWord, setSelectedWord] = useState<Word | null>(null);
-  const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null);
-  const [activePlayingWordId, setActivePlayingWordId] = useState<number | null>(
-    null,
-  );
+  // Ses durumu (yalnızca âyet dinleme)
   const [activePlayingVerseKey, setActivePlayingVerseKey] = useState<
     string | null
   >(null);
@@ -104,7 +95,6 @@ export default function App() {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Audio elements ref
-  const wordAudioRef = useRef<HTMLAudioElement | null>(null);
   const verseAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Save Settings & Theme Class
@@ -208,24 +198,6 @@ export default function App() {
   }, []);
 
   // Audio Play Handlers
-  const handlePlayWordAudio = (word: Word) => {
-    if (!word.audio_url) return;
-    const url = getWordAudioUrl(word.audio_url);
-    if (!url) return;
-
-    if (wordAudioRef.current) {
-      wordAudioRef.current.pause();
-    }
-
-    const audio = new Audio(url);
-    wordAudioRef.current = audio;
-    setActivePlayingWordId(word.id);
-
-    audio.play().catch((e) => console.warn("Word audio play error", e));
-    audio.onended = () => setActivePlayingWordId(null);
-    audio.onerror = () => setActivePlayingWordId(null);
-  };
-
   const handlePlayVerseAudio = (verse: Verse) => {
     const parts = verse.verse_key.split(":");
     const ch = parseInt(parts[0], 10);
@@ -256,15 +228,6 @@ export default function App() {
     audio.play().catch((e) => console.warn("Verse audio play error", e));
     audio.onended = () => setActivePlayingVerseKey(null);
     audio.onerror = () => setActivePlayingVerseKey(null);
-  };
-
-  // Word selection for drawer
-  const handleSelectWord = (word: Word, verse: Verse) => {
-    setSelectedWord(word);
-    setSelectedVerse(verse);
-    if (settings.autoPlayWordAudio && word.audio_url) {
-      handlePlayWordAudio(word);
-    }
   };
 
   // Bookmark Toggle
@@ -303,7 +266,6 @@ export default function App() {
   const handleSelectChapter = (chId: number) => {
     setSelectedChapterId(chId);
     setCurrentPage(1);
-    setSelectedWord(null);
 
     // Mushaf modunda içerik sayfa numarasına bağlıdır; seçilen sûrenin
     // başlangıç sayfasına atlanmalı, aksi halde aynı sayfa tekrar yüklenir.
@@ -319,7 +281,6 @@ export default function App() {
 
   const handleJumpToPage = (pgNum: number) => {
     setMushafPageNumber(pgNum);
-    setSelectedWord(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -609,8 +570,6 @@ export default function App() {
               chapters={chapters}
               settings={settings}
               onPageChange={handleJumpToPage}
-              onSpeakWord={handlePlayWordAudio}
-              activePlayingWordId={activePlayingWordId}
             />
           ) : (
             /* Mode 2: Word-by-Word Verse Cards */
@@ -622,11 +581,7 @@ export default function App() {
                   chapter={currentChapter}
                   settings={settings}
                   isPlaying={activePlayingVerseKey === verse.verse_key}
-                  activePlayingWordId={activePlayingWordId}
                   onPlayVerseAudio={handlePlayVerseAudio}
-                  onPlayWordAudio={handlePlayWordAudio}
-                  onSelectWord={handleSelectWord}
-                  selectedWordId={selectedWord?.id}
                   isBookmarked={bookmarks.some(
                     (b) => b.verseKey === verse.verse_key,
                   )}
@@ -719,17 +674,6 @@ export default function App() {
           <ArrowUp className="w-5 h-5" />
         </button>
       )}
-
-      {/* Word Drawer / Bottom Bar for Selected Word */}
-      <WordDrawer
-        word={selectedWord}
-        verse={selectedVerse}
-        chapter={currentChapter}
-        onClose={() => setSelectedWord(null)}
-        onPlayWordAudio={handlePlayWordAudio}
-        onPlayVerseAudio={handlePlayVerseAudio}
-        isPlayingWord={activePlayingWordId === selectedWord?.id}
-      />
 
       {/* Modals */}
       <SearchModal

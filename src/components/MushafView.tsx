@@ -16,9 +16,6 @@ interface MushafViewProps {
   chapters: Chapter[];
   settings: AppSettings;
   onPageChange: (newPage: number) => void;
-  /** Çift dokunuş: kelimenin telaffuzunu seslendir */
-  onSpeakWord: (word: Word) => void;
-  activePlayingWordId?: number | null;
 }
 
 export const MushafView: React.FC<MushafViewProps> = ({
@@ -27,8 +24,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
   chapters,
   settings,
   onPageChange,
-  onSpeakWord,
-  activePlayingWordId,
 }) => {
   const [isPlayingPage, setIsPlayingPage] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -261,9 +256,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
                           alwaysShowMeaning={settings.alwaysShowWordMeaning}
                           fontClass={fontClass}
                           fontSizeMultiplier={settings.fontSizeMultiplier}
-                          isSelected={false}
-                          activePlayingWordId={activePlayingWordId}
-                          onSpeakWord={onSpeakWord}
                         />
                       ))}
                     </React.Fragment>
