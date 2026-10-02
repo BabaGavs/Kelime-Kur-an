@@ -15,12 +15,11 @@
 }
 
 /* ============================================
-   GÖZ YORMayan OKUMA PALETİ
+   GÖZ YORMAYAN OKUMA PALETİ (tek tema)
    Sıcak nötr zemin + düşük doygunluk + yumuşak kontrast
    ============================================ */
 
-:root,
-[data-theme="sepia"] {
+:root {
   /* Zeminler: sıcak kırık bej (mavi ışığı yansıtmaz) */
   --bg-primary: #f6f2ec;
   --bg-secondary: #efeae1;

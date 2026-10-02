@@ -68,7 +68,6 @@ export interface ChapterInfo {
 }
 
 export type DisplayMode = "word-by-word" | "mushaf" | "translation";
-export type AppTheme = "light" | "sepia";
 export type ArabicFont = "amiri" | "scheherazade" | "system";
 export type TranslationSource = 77 | 52 | "both"; // 77 = Diyanet, 52 = Elmalılı
 
@@ -85,7 +84,6 @@ export interface Bookmark {
 
 export interface AppSettings {
   displayMode: DisplayMode;
-  theme: AppTheme;
   arabicFont: ArabicFont;
   fontSizeMultiplier: number;
   translationSource: TranslationSource;

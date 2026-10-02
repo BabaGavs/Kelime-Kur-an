@@ -25,6 +25,8 @@ interface MushafViewProps {
   onPageChange: (newPage: number) => void;
   /** Fihrist menüsünü aç */
   onOpenMenu?: () => void;
+  /** Kelime Meali moduna geç */
+  onSwitchToWordMode?: () => void;
   /** Bu sayfa yer imlerinde mi */
   isPageBookmarked?: boolean;
   onTogglePageBookmark?: (page: number) => void;
@@ -37,6 +39,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
   settings,
   onPageChange,
   onOpenMenu,
+  onSwitchToWordMode,
   isPageBookmarked = false,
   onTogglePageBookmark,
 }) => {
@@ -208,7 +211,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
         }}
       >
         {/* Üst satır: solda fihrist + konum bilgisi, sağda sayfa dinleme */}
-        <div className="mushaf-fit-header flex items-center gap-2">
+        <div className="mushaf-fit-header relative flex items-center gap-2">
           {onOpenMenu && (
             <button
               onClick={(e) => {
@@ -230,6 +233,31 @@ export const MushafView: React.FC<MushafViewProps> = ({
               : `${primaryChapter?.id ?? 1}. Sûre`}{" "}
             · {surahNames}
           </span>
+
+          {/* Mod anahtarı başlığın tam ortasında */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-lg bg-stone-100/70 border border-stone-200 p-0.5"
+            style={{ marginInline: "calc(0.25rem * var(--fit, 1))" }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSwitchToWordMode?.();
+              }}
+              disabled={!onSwitchToWordMode}
+              className="px-2 sm:px-2.5 py-0.5 rounded-md font-medium text-stone-500 hover:text-emerald-700 transition-colors disabled:pointer-events-none"
+              style={{ fontSize: "calc(10px * var(--fit, 1))" }}
+            >
+              Kelime Meali
+            </button>
+            <span
+              className="px-2 sm:px-2.5 py-0.5 rounded-md font-semibold bg-white text-emerald-700 shadow-sm"
+              style={{ fontSize: "calc(10px * var(--fit, 1))" }}
+              aria-current="page"
+            >
+              Mushaf
+            </span>
+          </div>
 
           <span className="flex-1" />
 

@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  AppSettings,
-  AppTheme,
-  ArabicFont,
-  TranslationSource,
-} from "../types/quran";
-import { X, Sun, Coffee } from "lucide-react";
+import { AppSettings, ArabicFont, TranslationSource } from "../types/quran";
+import { X } from "lucide-react";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -40,33 +35,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
 
-        {/* 1. Theme Selection */}
-        <div>
-          <label className="block text-[10px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 sm:mb-2.5">
-            Tema Modu
-          </label>
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-            {[
-              { id: "light", name: "Açık", icon: Sun },
-              { id: "sepia", name: "Kitap (Sepya)", icon: Coffee },
-            ].map(({ id, name, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => onUpdateSettings({ theme: id as AppTheme })}
-                className={`py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl border text-[10px] sm:text-xs font-medium flex items-center justify-center gap-1 sm:gap-1.5 transition-all ${
-                  settings.theme === id
-                    ? "border-emerald-600 bg-emerald-50 text-emerald-800 font-semibold shadow-sm"
-                    : "border-stone-200 text-stone-600 hover:bg-stone-50"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                {name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 2. Arabic Font Family */}
+        {/* Arapça Hat / Yazı Tipi */}
         <div>
           <label className="block text-[10px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 sm:mb-2.5">
             Arapça Hat / Yazı Tipi
@@ -111,7 +80,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         </div>
 
-        {/* 3. Font Size Multiplier */}
+        {/* Yazı Boyutu */}
         <div>
           <div className="flex items-center justify-between text-[10px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5 sm:mb-2">
             <span>Arapça Yazı Boyutu</span>
@@ -134,7 +103,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           />
         </div>
 
-        {/* 4. Word Meaning Display Toggle */}
+        {/* Kelime Anlamı Gösterimi */}
         <div className="pt-2 border-t border-stone-100 space-y-2 sm:space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -168,7 +137,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
           </div>
 
-          {/* 5. Translation Source Selection */}
+          {/* Meal Kaynağı */}
           <div>
             <label className="block text-[10px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5 sm:mb-2">
               Âyet Meali Kaynağı

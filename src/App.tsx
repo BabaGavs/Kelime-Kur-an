@@ -36,7 +36,6 @@ import {
 const DEFAULT_SETTINGS: AppSettings = {
   // Uygulama doğrudan sade Mushaf ekranıyla açılır
   displayMode: "mushaf",
-  theme: "sepia",
   arabicFont: "amiri",
   fontSizeMultiplier: 1.0,
   translationSource: 77, // Diyanet
@@ -125,18 +124,11 @@ export default function App() {
   // Audio elements ref
   const verseAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Save Settings & Theme Class
+  // Save Settings
   useEffect(() => {
     try {
       localStorage.setItem("quran_app_settings", JSON.stringify(settings));
     } catch (e) {}
-
-    const root = document.documentElement;
-    if (settings.theme === "sepia") {
-      root.setAttribute("data-theme", "sepia");
-    } else {
-      root.removeAttribute("data-theme");
-    }
   }, [settings]);
 
   // Dikey kaydırmayı kilitle: Kur'an sayfası tek ekrana sığar
@@ -602,6 +594,9 @@ export default function App() {
               settings={settings}
               onPageChange={handleJumpToPage}
               onOpenMenu={() => setIsSidebarOpen(true)}
+              onSwitchToWordMode={() =>
+                setSettings((s) => ({ ...s, displayMode: "word-by-word" }))
+              }
               isPageBookmarked={pageBookmarks.includes(mushafPageNumber)}
               onTogglePageBookmark={handleTogglePageBookmark}
             />
