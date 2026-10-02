@@ -12,6 +12,11 @@ interface WordBadgeProps {
 
 const VIEWPORT_MARGIN = 8;
 
+// Latin rakamlarını Arap rakamlarına çevirir (Mushaf görünümü için)
+function toArabicDigits(n: number): string {
+  return String(n).replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]);
+}
+
 export const WordBadge: React.FC<WordBadgeProps> = ({
   word,
   verse,
@@ -117,15 +122,28 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
     return () => document.removeEventListener("pointerdown", onDoc);
   }, [tapMeaning]);
 
-  // Ayet sonu isareti
+  // Ayet sonu isareti: Mushaf'taki gibi parantez içinde Arap rakamı
   if (isEndOfAyah) {
     return (
       <span
-        className="inline-flex items-center justify-center mx-1 select-none text-emerald-700 font-bold"
+        className="ayah-mark select-none"
         title={`${verse.verse_key} numaralı âyet sonu`}
+        aria-label={`${verse.verse_number}. âyet sonu`}
       >
-        <span className="text-xl px-1.5 py-0.5 rounded-full border border-emerald-600/30 bg-emerald-50/60 text-emerald-800 font-mono text-xs">
-          {verse.verse_number}
+        <span
+          className="ayah-mark__paren ayah-mark__paren--r"
+          aria-hidden="true"
+        >
+          &#x276E;
+        </span>
+        <span className="ayah-mark__num">
+          {toArabicDigits(verse.verse_number)}
+        </span>
+        <span
+          className="ayah-mark__paren ayah-mark__paren--l"
+          aria-hidden="true"
+        >
+          &#x276F;
         </span>
       </span>
     );

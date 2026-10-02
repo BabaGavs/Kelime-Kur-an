@@ -7,7 +7,13 @@ import React, {
 } from "react";
 import { Verse, Chapter, AppSettings, Word } from "../types/quran";
 import { WordBadge } from "./WordBadge";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Square,
+  Bookmark,
+} from "lucide-react";
 import { getVerseAudioUrl } from "../services/quranApi";
 
 interface MushafViewProps {
@@ -16,6 +22,9 @@ interface MushafViewProps {
   chapters: Chapter[];
   settings: AppSettings;
   onPageChange: (newPage: number) => void;
+  /** Bu sayfa yer imlerinde mi */
+  isPageBookmarked?: boolean;
+  onTogglePageBookmark?: (page: number) => void;
 }
 
 export const MushafView: React.FC<MushafViewProps> = ({
@@ -24,6 +33,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
   chapters,
   settings,
   onPageChange,
+  isPageBookmarked = false,
+  onTogglePageBookmark,
 }) => {
   const [isPlayingPage, setIsPlayingPage] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -167,8 +178,16 @@ export const MushafView: React.FC<MushafViewProps> = ({
         className="mushaf-fit-frame mushaf-page-enter"
         style={{ padding: "calc(0.75rem * var(--fit, 1))" }}
       >
-        {/* Üst satır: fihrist boşluğu + sayfa dinleme metni */}
+        {/* Üst satır: solda konum bilgisi, sağda sayfa dinleme */}
         <div className="mushaf-fit-header flex items-center gap-2">
+          <span className="text-[10px] sm:text-[11px] text-stone-400 font-medium truncate">
+            {currentJuz}. Cüz ·{" "}
+            {chapterList.length > 1
+              ? `${chapterList.length} Sûre`
+              : `${primaryChapter?.id ?? 1}. Sûre`}{" "}
+            · {surahNames}
+          </span>
+
           <span className="flex-1" />
 
           <button
@@ -180,7 +199,27 @@ export const MushafView: React.FC<MushafViewProps> = ({
             aria-label={
               isPlayingPage ? "Sayfa dinlemeyi durdur" : "Sayfayı dinle"
             }
-            className={`text-[11px] sm:text-xs font-medium transition-colors ${
+            title={isPlayingPage ? "Durdur" : "Sayfayı dinle"}
+            className={`shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-colors ${
+              isPlayingPage
+                ? "text-amber-600 bg-amber-50"
+                : "text-stone-400 hover:text-emerald-700 hover:bg-stone-100"
+            } disabled:opacity-30 disabled:pointer-events-none`}
+          >
+            {isPlayingPage ? (
+              <Square className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            ) : (
+              <Play className="w-3 h-3 sm:w-3.5 sm:h-3.5 translate-x-px fill-current" />
+            )}
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePlayPage();
+            }}
+            disabled={verses.length === 0}
+            className={`shrink-0 text-[11px] sm:text-xs font-medium transition-colors ${
               isPlayingPage
                 ? "text-amber-600"
                 : "text-stone-400 hover:text-emerald-700"
@@ -211,7 +250,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
                   <div className="text-center">
                     <div
                       dir="rtl"
-                      className="font-arabic font-bold text-stone-800"
+                      className="mushaf-surah-title font-arabic font-bold"
                       style={{ fontSize: "calc(1.5rem * var(--fit, 1))" }}
                     >
                       سُورَةُ {chObj.name_arabic}
@@ -219,7 +258,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
                     {chObj.bismillah_pre && (
                       <div
                         dir="rtl"
-                        className="font-arabic text-stone-500"
+                        className="mushaf-bismillah font-arabic"
                         style={{
                           fontSize: "calc(1.1rem * var(--fit, 1))",
                           marginTop: "calc(0.35rem * var(--fit, 1))",
@@ -268,18 +307,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
 
         {/* Sayfa gezinme - Arapça yönü: sonraki sola, önceki sağa */}
         <div className="mushaf-fit-footer pt-2 mt-1 border-t border-stone-200/80">
-          {/* Sol altta konum bilgisi */}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] sm:text-[11px] text-stone-400 font-medium truncate">
-              {currentJuz}. Cüz ·{" "}
-              {chapterList.length > 1
-                ? `${chapterList.length} Sûre`
-                : `${primaryChapter?.id ?? 1}. Sûre`}{" "}
-              · {surahNames}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 mt-1.5">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -293,9 +321,38 @@ export const MushafView: React.FC<MushafViewProps> = ({
               <span className="hidden sm:inline">Sonraki</span>
             </button>
 
-            <span className="font-mono text-[11px] sm:text-xs text-stone-400 tabular-nums">
-              {pageNumber}
-            </span>
+            {/* Sayfa numarası + yer imi (hatim takibi) */}
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-[11px] sm:text-xs text-stone-400 tabular-nums">
+                {pageNumber}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTogglePageBookmark?.(pageNumber);
+                }}
+                aria-label={
+                  isPageBookmarked
+                    ? `${pageNumber}. sayfayı yer imlerinden çıkar`
+                    : `${pageNumber}. sayfayı yer imlerine ekle`
+                }
+                title={
+                  isPageBookmarked
+                    ? "Yer imlerinden çıkar"
+                    : "Yer imlerine ekle"
+                }
+                aria-pressed={!!isPageBookmarked}
+                className={`p-1 rounded-full transition-colors ${
+                  isPageBookmarked
+                    ? "text-amber-500 hover:bg-amber-50"
+                    : "text-stone-300 hover:text-amber-500 hover:bg-stone-100"
+                }`}
+              >
+                <Bookmark
+                  className={`w-3.5 h-3.5 ${isPageBookmarked ? "fill-current" : ""}`}
+                />
+              </button>
+            </div>
 
             <button
               onClick={(e) => {

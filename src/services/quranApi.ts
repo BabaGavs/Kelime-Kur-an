@@ -2,6 +2,7 @@ import { Chapter, ChapterInfo, Verse } from "../types/quran";
 import chaptersLocal from "../data/chapters.json";
 import chapter1Local from "../data/chapter1.json";
 import { chapterInfoTR } from "../data/chapterInfo";
+import { VERSE_MEAL_OVERRIDES } from "../data/verseMealOverrides";
 
 const BASE_URL = "https://api.quran.com/api/v4";
 const AUDIO_BASE_URL = "https://audio.qurancdn.com";
@@ -191,10 +192,25 @@ function normalizeVerses(verses: Verse[]): Verse[] {
       }
     }
     if (verse.translations) {
-      verse.translations = verse.translations.map((t) => ({
-        ...t,
-        text: decodeHtmlEntities(t.text || ""),
-      }));
+      // Bazı sûrelerde (Felağ, Nâs) API her âyete tam mealini veriyor;
+      // doğru âyet bazlı metinlerle değiştiriyoruz.
+      const override = VERSE_MEAL_OVERRIDES[verse.verse_key];
+      let applied = false;
+      verse.translations = verse.translations.map((t) => {
+        const text = decodeHtmlEntities(t.text || "");
+        if (!applied && t.resource_id === 77 && override) {
+          applied = true;
+          return { ...t, text: override };
+        }
+        return { ...t, text };
+      });
+      // Diyanet kaynağı hiç yoksa override tek başına eklenir
+      if (!applied && override) {
+        verse.translations = [
+          { id: -1, resource_id: 77, text: override },
+          ...verse.translations,
+        ];
+      }
     }
   }
   return verses;

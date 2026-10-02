@@ -112,6 +112,70 @@ body {
 }
 
 /* ============================================
+   MUSHAF - AYET SONU İŞARETİ (Kur'an hattı)
+   ============================================ */
+.ayah-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  margin-inline: 0.15em;
+  padding: 0 calc(0.1em * var(--fit, 1));
+  font-family: "Amiri", "Scheherazade New", serif;
+  line-height: 1;
+  vertical-align: middle;
+  /* Kehribar ton, Mushaf mürekkebi hissi */
+  color: #9a7b3f;
+  text-shadow: 0 calc(1px * var(--fit, 1)) calc(1.5px * var(--fit, 1))
+    rgba(120, 96, 48, 0.22);
+}
+
+.ayah-mark__num {
+  font-size: calc(1.05em * var(--fit, 1));
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Parantezler sayıdan küçük ve daha soluk */
+.ayah-mark__paren {
+  font-size: calc(1.15em * var(--fit, 1));
+  font-weight: 400;
+  opacity: 0.55;
+  transform: scaleX(0.82);
+}
+
+.ayah-mark__paren--r {
+  margin-inline-end: -0.02em;
+}
+
+.ayah-mark__paren--l {
+  margin-inline-start: -0.02em;
+}
+
+/* ============================================
+   MUSHAF - SÛRE BAŞLIĞI VE BESMELE
+   ============================================ */
+.mushaf-surah-title {
+  background: linear-gradient(180deg, #b39352 0%, #8f7137 48%, #6f5a2b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(
+    0 calc(1px * var(--fit, 1)) calc(1px * var(--fit, 1)) rgba(90, 70, 30, 0.28)
+  );
+}
+
+.mushaf-bismillah {
+  background: linear-gradient(180deg, #8d9b78 0%, #6b7d57 50%, #55683f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(
+    0 calc(1px * var(--fit, 1)) calc(1px * var(--fit, 1)) rgba(60, 75, 45, 0.22)
+  );
+}
+
+/* ============================================
    KELİME MANASI - MASAÜSTÜ (imleç) ve MOBİL (dokunma)
    ============================================ */
 .word-popup {

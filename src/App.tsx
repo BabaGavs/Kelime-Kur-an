@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   getChapters,
   getVersesByChapter,
@@ -93,6 +93,34 @@ export default function App() {
   >(null);
 
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Sayfa yer imleri - hatim takibi için
+  const [pageBookmarks, setPageBookmarks] = useState<number[]>(() => {
+    try {
+      const raw = localStorage.getItem("quran_page_bookmarks");
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "quran_page_bookmarks",
+        JSON.stringify(pageBookmarks),
+      );
+    } catch (e) {}
+  }, [pageBookmarks]);
+
+  const handleTogglePageBookmark = useCallback((page: number) => {
+    setPageBookmarks((prev) =>
+      prev.includes(page)
+        ? prev.filter((p) => p !== page)
+        : [...prev, page].sort((a, b) => a - b),
+    );
+  }, []);
 
   // Audio elements ref
   const verseAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -570,6 +598,8 @@ export default function App() {
               chapters={chapters}
               settings={settings}
               onPageChange={handleJumpToPage}
+              isPageBookmarked={pageBookmarks.includes(mushafPageNumber)}
+              onTogglePageBookmark={handleTogglePageBookmark}
             />
           ) : (
             /* Mode 2: Word-by-Word Verse Cards */
