@@ -350,7 +350,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden bg-stone-50 text-stone-900 transition-colors">
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors">
       {/* Top Navbar - tüm platformlarda gizli (sade Mushaf görünümü) */}
       <header className="hidden">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">

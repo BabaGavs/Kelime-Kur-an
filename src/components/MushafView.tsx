@@ -199,7 +199,14 @@ export const MushafView: React.FC<MushafViewProps> = ({
   const hasNext = pageNumber < 604;
 
   return (
-    <div className="mx-auto max-w-4xl h-full flex flex-col relative">
+    // Madani sayfa kenar boşluğu: page_margin 6-11dp
+    <div
+      className="h-full flex flex-col relative mushaf-page-surface"
+      style={{
+        margin: "calc(0.45rem * var(--fit, 1))",
+        padding: "calc(0.5rem * var(--fit, 1))",
+      }}
+    >
       <div
         key={pageNumber}
         ref={frameRef}
@@ -352,7 +359,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
                 {/* Kelimeler */}
                 <div
                   dir="rtl"
-                  className="flex flex-wrap items-center justify-center gap-x-0.5 sm:gap-x-1 leading-tight text-center"
+                  className="flex flex-wrap items-center justify-center gap-x-0.5 sm:gap-x-1 leading-mushaf text-center mushaf-ink"
                   style={{ rowGap: "calc(0.3rem * var(--fit, 1))" }}
                 >
                   {chVerses.map((v) => (
@@ -377,7 +384,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
         </div>
 
         {/* Sayfa gezinme - Arapça yönü: sonraki sola, önceki sağa */}
-        <div className="mushaf-fit-footer pt-2 mt-1 border-t border-stone-200/80">
+        <div className="mushaf-fit-footer pt-2 mt-1 border-t border-stone-300/70">
           <div className="flex items-center justify-between gap-2">
             <button
               onClick={(e) => {
@@ -415,8 +422,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
                 aria-pressed={!!isPageBookmarked}
                 className={`p-1 rounded-full transition-colors ${
                   isPageBookmarked
-                    ? "text-amber-500 hover:bg-amber-50"
-                    : "text-stone-300 hover:text-amber-500 hover:bg-stone-100"
+                    ? "text-[var(--bookmark)] hover:bg-emerald-50"
+                    : "text-stone-400 hover:text-[var(--bookmark)] hover:bg-stone-200/50"
                 }`}
               >
                 <Bookmark

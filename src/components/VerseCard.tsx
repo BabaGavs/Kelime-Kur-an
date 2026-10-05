@@ -101,8 +101,8 @@ export const VerseCard: React.FC<VerseCardProps> = ({
             title={isBookmarked ? "Yer İmlerinden Çıkar" : "Yer İmlerine Ekle"}
             className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
               isBookmarked
-                ? "text-amber-500 hover:text-amber-600 bg-amber-50"
-                : "text-stone-600 hover:text-amber-500 hover:bg-stone-100"
+                ? "text-[var(--bookmark)] hover:bg-emerald-50"
+                : "text-stone-600 hover:text-[var(--bookmark)] hover:bg-stone-100"
             }`}
           >
             <Bookmark
@@ -127,7 +127,7 @@ export const VerseCard: React.FC<VerseCardProps> = ({
       {/* Interactive Arabic Words Container */}
       <div
         dir="rtl"
-        className="flex flex-wrap items-center justify-start gap-y-2 sm:gap-y-3 gap-x-1 sm:gap-x-1.5 sm:gap-x-2 py-2 sm:py-3 px-1.5 sm:px-2 sm:px-3 rounded-xl bg-stone-50/70 border border-stone-100 mb-3 sm:mb-5 leading-loose text-right"
+        className="flex flex-wrap items-center justify-start gap-y-2 sm:gap-y-3 gap-x-1 sm:gap-x-1.5 sm:gap-x-2 py-2 sm:py-3 px-1.5 sm:px-2 sm:px-3 rounded-xl bg-stone-50/60 border border-stone-200/70 mb-3 sm:mb-5 leading-mushaf text-right"
       >
         {verse.words.map((word) => (
           <WordBadge
@@ -148,8 +148,8 @@ export const VerseCard: React.FC<VerseCardProps> = ({
           {(settings.translationSource === 77 ||
             settings.translationSource === "both") &&
             diyanetTranslation && (
-              <div className="text-xs sm:text-sm sm:text-base leading-relaxed pl-2.5 sm:pl-3.5 border-l-2 border-emerald-500/70">
-                <p className="font-serif italic text-stone-800">
+              <div className="text-xs sm:text-sm sm:text-base leading-relaxed pl-2.5 sm:pl-3.5 border-l-2 border-emerald-600">
+                <p className="font-serif italic text-stone-700">
                   {diyanetTranslation}
                 </p>
               </div>
@@ -158,11 +158,11 @@ export const VerseCard: React.FC<VerseCardProps> = ({
           {(settings.translationSource === 52 ||
             settings.translationSource === "both") &&
             elmaliliTranslation && (
-              <div className="text-xs sm:text-sm sm:text-base leading-relaxed pl-2.5 sm:pl-3.5 border-l-2 border-amber-500/60">
-                <span className="text-[10px] sm:text-[11px] font-semibold text-amber-800 block mb-0.5">
+              <div className="text-xs sm:text-sm sm:text-base leading-relaxed pl-2.5 sm:pl-3.5 border-l-2 border-[var(--highlight-yellow)]">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-[var(--highlight-yellow)] block mb-0.5">
                   Elmalılı Hamdi Yazır Meali:
                 </span>
-                <p className="font-serif italic text-stone-800">
+                <p className="font-serif italic text-stone-700">
                   {elmaliliTranslation}
                 </p>
               </div>

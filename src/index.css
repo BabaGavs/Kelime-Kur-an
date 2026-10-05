@@ -3,6 +3,26 @@
 /* Koyu mod tamamen kaldirildi: dark varyantini devre disi birak */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ============================================
+   MADANI RENK SİSTEMİ
+   quran/quran_android paletinin Tailwind karşılığı.
+   Accent: #00838f (Material Teal 800) — uygulamanın imza rengi.
+   emerald-* slotları teal'e taşınır, böylece tüm emerald sınıfları
+   (bg-emerald-600, text-emerald-700 ...) Madani rengini alır.
+   ============================================ */
+@theme {
+  --color-emerald-50: #e0f2f1;
+  --color-emerald-100: #b2dfdb;
+  --color-emerald-200: #80cbc4;
+  --color-emerald-300: #4db6ac;
+  --color-emerald-400: #26a69a;
+  --color-emerald-500: #009688;
+  --color-emerald-600: #00838f;
+  --color-emerald-700: #00695c;
+  --color-emerald-800: #004d40;
+  --color-emerald-900: #00332c;
+}
+
 @layer utilities {
   .font-arabic {
     font-family:
@@ -12,43 +32,64 @@
   .font-scheherazade {
     font-family: "Scheherazade New", "Amiri", "Traditional Arabic", serif;
   }
+  /* Madani satır aralığı çarpanı: 1.2 */
+  .leading-mushaf {
+    line-height: 1.2;
+  }
 }
 
 /* ============================================
-   GÖZ YORMAYAN OKUMA PALETİ (tek tema)
-   Sıcak nötr zemin + düşük doygunluk + yumuşak kontrast
+   MADANI OKUMA PALETİ (tek tema)
+   quran/quran_android → colors.xml karşılığı
    ============================================ */
 
 :root {
-  /* Zeminler: sıcak kırık bej (mavi ışığı yansıtmaz) */
-  --bg-primary: #f6f2ec;
-  --bg-secondary: #efeae1;
-  --bg-card: #fdfbf7;
-  --bg-elevated: #fffdf9;
+  /* Zeminler (Madani: windowBackground = surface) */
+  --bg-primary: #faf8f7;
+  --bg-secondary: #f1ecd8;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
 
-  /* Metin: saf siyah yerine yumuşak kahve-siyah (7:1 kontrast) */
-  --text-primary: #2f2a24;
-  --text-secondary: #5d564e;
-  --text-muted: #8d857b;
+  /* Mushaf sayfa zemini (Madani: page_background) */
+  --page-background: #fff4cb;
+  --page-border: #e0d5a8;
 
-  /* Çizgiler: çok soluk, gözü yormaz */
-  --border-color: #e2dbd0;
-  --border-light: #ece6dd;
+  /* Metin (Madani: title_color / toolbar_text / inactive) */
+  --text-primary: #212529;
+  --text-secondary: #44464e;
+  --text-muted: #9e9e9e;
 
-  /* Vurgu: muted adaçayı-yeşil (İslami ruh) */
-  --accent-color: #5f7a6e;
-  --accent-hover: #4d655b;
-  --accent-light: #e7eeea;
-  --accent-glow: rgba(95, 122, 110, 0.18);
+  /* Çizgiler (Madani: translation_divider_color) */
+  --border-color: #e8e8e8;
+  --border-light: #f1f1f1;
 
-  /* Altın: mücevher aksan */
-  --gold: #b8994f;
-  --gold-light: #f2e9d5;
+  /* Vurgu (Madani: accent_color = #00838f) */
+  --accent-color: #00838f;
+  --accent-hover: #00695c;
+  --accent-light: #e0f2f1;
+  --accent-glow: rgba(0, 131, 143, 0.18);
 
-  /* Gölgeler: çok yumuşak */
-  --shadow-sm: 0 1px 2px rgba(60, 48, 32, 0.04);
-  --shadow-md: 0 4px 14px rgba(60, 48, 32, 0.06);
-  --shadow-lg: 0 10px 28px rgba(60, 48, 32, 0.08);
+  /* Seçili âyet (Madani: translation_ayah_selected_color) */
+  --ayah-selected: #e0f2f1;
+
+  /* Yer imi (Madani: ayah_bookmark_color) */
+  --bookmark: #2e7d32;
+
+  /* Madani'nin beş vurgu rengi */
+  --highlight-yellow: #f9a825;
+  --highlight-green: #2e7d32;
+  --highlight-blue: #1565c0;
+  --highlight-red: #c62828;
+  --highlight-purple: #6a1b9a;
+
+  /* Mushaf mürekkebi (krem sayfa üzerinde) */
+  --ink: #212529;
+  --ink-soft: #44464e;
+
+  /* Gölgeler */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.08);
   --shadow-glow: 0 0 22px var(--accent-glow);
 
   --radius-sm: 8px;
@@ -124,9 +165,9 @@ body {
   line-height: 1;
   vertical-align: middle;
   /* Kehribar ton, Mushaf mürekkebi hissi */
-  color: #9a7b3f;
+  color: #3f3520;
   text-shadow: 0 calc(1px * var(--fit, 1)) calc(1.5px * var(--fit, 1))
-    rgba(120, 96, 48, 0.22);
+    rgba(90, 74, 30, 0.28);
 }
 
 .ayah-mark__num {
@@ -155,23 +196,41 @@ body {
    MUSHAF - SÛRE BAŞLIĞI VE BESMELE
    ============================================ */
 .mushaf-surah-title {
-  background: linear-gradient(180deg, #b39352 0%, #8f7137 48%, #6f5a2b 100%);
+  background: linear-gradient(180deg, #4a3a12 0%, #2f2510 55%, #1d170b 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   filter: drop-shadow(
-    0 calc(1px * var(--fit, 1)) calc(1px * var(--fit, 1)) rgba(90, 70, 30, 0.28)
+    0 calc(1px * var(--fit, 1)) calc(1px * var(--fit, 1)) rgba(60, 48, 12, 0.3)
   );
 }
 
 .mushaf-bismillah {
-  background: linear-gradient(180deg, #8d9b78 0%, #6b7d57 50%, #55683f 100%);
+  background: linear-gradient(180deg, #3f4a33 0%, #2b3323 55%, #1c2216 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   filter: drop-shadow(
-    0 calc(1px * var(--fit, 1)) calc(1px * var(--fit, 1)) rgba(60, 75, 45, 0.22)
+    0 calc(1px * var(--fit, 1)) calc(1px * var(--fit, 1)) rgba(35, 45, 28, 0.26)
   );
+}
+
+/* ============================================
+   MUSHAF - MADANI SAYFA YÜZEYİ
+   Krem kâğıt (page_background) + ince çerçeve + kenar boşluğu
+   ============================================ */
+.mushaf-page-surface {
+  background: var(--page-background);
+  border: 1px solid var(--page-border);
+  border-radius: 4px;
+  box-shadow:
+    0 1px 3px rgba(90, 74, 30, 0.14),
+    0 8px 24px rgba(90, 74, 30, 0.1);
+}
+
+/* Krem sayfa üzerinde okunabilirlik: metin mürekkep rengi */
+.mushaf-page-surface .mushaf-ink {
+  color: var(--ink);
 }
 
 /* ============================================
@@ -186,13 +245,13 @@ body {
   padding: 6px 10px;
   border-radius: 8px;
   background: #ffffff;
-  border: 1px solid #ddd6c8;
-  color: #14120e;
+  border: 1px solid #e8e8e8;
+  color: var(--text-primary);
   font-size: calc(11px * var(--fit, 1));
   font-weight: 600;
   line-height: 1.35;
   text-align: center;
-  box-shadow: 0 4px 14px rgba(40, 32, 18, 0.14);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
   pointer-events: none;
   animation: tooltipIn 160ms cubic-bezier(0.34, 1.3, 0.64, 1);
   white-space: normal;
@@ -636,41 +695,8 @@ html {
   --tw-shadow-color: rgba(60, 48, 32, 0.12);
 }
 
-/* Emerald to Teal accent */
-.bg-emerald-600 {
-  background-color: var(--accent-color) !important;
-}
-
-.bg-emerald-700 {
-  background-color: var(--accent-hover) !important;
-}
-
-.hover\:bg-emerald-700:hover {
-  background-color: var(--accent-hover) !important;
-}
-
-.text-emerald-700,
-.text-emerald-800 {
-  color: var(--accent-color) !important;
-}
-
-.text-emerald-600 {
-  color: var(--accent-color) !important;
-}
-
-.bg-emerald-50,
-.bg-emerald-100 {
-  background-color: var(--accent-light) !important;
-}
-
-.border-emerald-500,
-.border-emerald-600 {
-  border-color: var(--accent-color) !important;
-}
-
-.ring-emerald-500 {
-  --tw-ring-color: var(--accent-color) !important;
-}
+/* Accent tonları artık @theme üzerinden gelir (Madani teal paleti);
+   ek !important override'a gerek yok. */
 
 /* ============================================
    ANİMASYON SINIFLARI

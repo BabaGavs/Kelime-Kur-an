@@ -154,7 +154,7 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
       ref={rootRef}
       className={`relative inline-flex flex-col items-center justify-center rounded-lg transition-all cursor-pointer group select-none ${
         tapMeaning
-          ? "bg-emerald-50 ring-1 ring-emerald-200"
+          ? "bg-[var(--ayah-selected)] ring-1 ring-emerald-300"
           : "hover:bg-emerald-50"
       }`}
       style={{ padding: "calc(0.25rem) calc(0.375rem)" }}
@@ -176,6 +176,7 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
       <span
         dir="rtl"
         className={`${fontClass} leading-relaxed tracking-wide text-stone-900 transition-colors group-hover:text-emerald-700`}
+        // Mushaf modunda krem sayfa üzerinde mürekkep rengi
         style={{
           fontSize: `calc(${1.75 * fontSizeMultiplier}rem * var(--fit, 1))`,
         }}
