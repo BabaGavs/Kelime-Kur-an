@@ -576,22 +576,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Mobile View Toggle */}
-          <div className="flex sm:hidden justify-end">
-            <button
-              onClick={() =>
-                setSettings((s) => ({
-                  ...s,
-                  displayMode:
-                    s.displayMode === "mushaf" ? "word-by-word" : "mushaf",
-                }))
-              }
-              className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold text-[11px]"
-            >
-              {settings.displayMode === "mushaf" ? "Kelime Meali" : "Mushaf"}
-            </button>
-          </div>
-
           {/* Loading Indicator */}
           {loading ? (
             <div className="py-20 text-center space-y-3">

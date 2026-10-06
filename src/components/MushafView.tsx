@@ -47,6 +47,61 @@ export const MushafView: React.FC<MushafViewProps> = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
 
+  // ---- Dokunmatik ile sayfa değiştirme (sadece mobil) ----
+  const surfaceRef = useRef<HTMLDivElement>(null);
+  const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null);
+  const [showNavButtons, setShowNavButtons] = useState(false);
+  const navTimer = useRef<number | null>(null);
+
+  /** Butonları kısa süre gösterip gizler (geçiş animasyonu sırasında) */
+  const flashNav = useCallback(() => {
+    setShowNavButtons(true);
+    if (navTimer.current) window.clearTimeout(navTimer.current);
+    navTimer.current = window.setTimeout(() => setShowNavButtons(false), 900);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (navTimer.current) window.clearTimeout(navTimer.current);
+    };
+  }, []);
+
+  // Masaüstünde butonlar zaten görünür; odaklanınca da görünür kalsın
+  const keepNavVisible = useCallback(() => {
+    if (!window.matchMedia("(max-width: 639px)").matches) {
+      setShowNavButtons(true);
+    }
+  }, []);
+
+  const handleSwipeStart = useCallback((e: React.PointerEvent) => {
+    // Yalnızca tek parmakla ve fare dışı (dokunmatik) hareketler sayılır
+    if (e.pointerType === "mouse") return;
+    swipeStart.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+  }, []);
+
+  const handleSwipeEnd = useCallback(
+    (e: React.PointerEvent) => {
+      const start = swipeStart.current;
+      swipeStart.current = null;
+      if (!start || e.pointerType === "mouse") return;
+
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      const sure = Date.now() - start.t;
+
+      // Yatay hareket belirgin olmalı; dikey kaydırma ve kısa dokunuş sayılmaz
+      if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+      if (sure > 800) return;
+
+      // Arapça kitap yönü: sola sürükle -> sonraki sayfa, sağa -> önceki
+      const target = dx < 0 ? pageNumber + 1 : pageNumber - 1;
+      if (target < 1 || target > 604) return;
+      flashNav();
+      onPageChange(target);
+    },
+    [flashNav, onPageChange, pageNumber],
+  );
+
   // ---- Bir ekrana sığdırma ----
   const frameRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -201,11 +256,20 @@ export const MushafView: React.FC<MushafViewProps> = ({
   return (
     // Madani sayfa kenar boşluğu: page_margin 6-11dp
     <div
+      ref={surfaceRef}
       className="h-full flex flex-col relative mushaf-page-surface"
       style={{
         margin: "calc(0.45rem * var(--fit, 1))",
         padding: "calc(0.5rem * var(--fit, 1))",
+        // Dokunmatik yatay sürükleme: tarayıcının kendi kaydırmasını engelle
+        touchAction: "pan-y",
       }}
+      onPointerDown={handleSwipeStart}
+      onPointerUp={handleSwipeEnd}
+      onPointerCancel={() => {
+        swipeStart.current = null;
+      }}
+      onMouseEnter={keepNavVisible}
     >
       <div
         key={pageNumber}
@@ -383,17 +447,25 @@ export const MushafView: React.FC<MushafViewProps> = ({
           })}
         </div>
 
-        {/* Sayfa gezinme - Arapça yönü: sonraki sola, önceki sağa */}
+        {/* Sayfa gezinme - Arapça yönü: sonraki sola, önceki sağa.
+            Mobilde butonlar yalnızca geçiş animasyonu sırasında görünür;
+            normalde sayfayı parmakla sürüklemek değiştirir. */}
         <div className="mushaf-fit-footer pt-2 mt-1 border-t border-stone-300/70">
           <div className="flex items-center justify-between gap-2">
+            {/* Masaüstünde hep görünür, mobilde geçişte belirir */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                flashNav();
                 onPageChange(pageNumber + 1);
               }}
               disabled={!hasNext}
-              className="group flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-stone-400 hover:text-emerald-700 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none transition-colors"
               aria-label="Sonraki sayfa"
+              className={`group flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-stone-400 hover:text-emerald-700 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none transition-opacity duration-300 sm:opacity-100 ${
+                showNavButtons
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none sm:pointer-events-auto"
+              }`}
             >
               <ChevronLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Sonraki</span>
@@ -435,11 +507,16 @@ export const MushafView: React.FC<MushafViewProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                flashNav();
                 onPageChange(pageNumber - 1);
               }}
               disabled={!hasPrev}
-              className="group flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-stone-400 hover:text-emerald-700 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none transition-colors"
               aria-label="Önceki sayfa"
+              className={`group flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-stone-400 hover:text-emerald-700 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none transition-opacity duration-300 sm:opacity-100 ${
+                showNavButtons
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none sm:pointer-events-auto"
+              }`}
             >
               <span className="hidden sm:inline">Önceki</span>
               <ChevronRight className="w-4 h-4" />
