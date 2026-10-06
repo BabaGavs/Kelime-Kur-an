@@ -1,10 +1,14 @@
 import { Chapter, ChapterInfo, Verse } from "../types/quran";
 import chaptersLocal from "../data/chapters.json";
-import chapter1Local from "../data/chapter1.json";
 import { chapterInfoTR } from "../data/chapterInfo";
 import { VERSE_MEAL_OVERRIDES } from "../data/verseMealOverrides";
+import {
+  getOfflineChapter,
+  getOfflineJuz,
+  getOfflinePage,
+  offlineVeriYukle,
+} from "./offlineData";
 
-const BASE_URL = "https://api.quran.com/api/v4";
 const AUDIO_BASE_URL = "https://audio.qurancdn.com";
 
 // In-memory memory cache
@@ -239,186 +243,77 @@ function stripBasmalaFromFatiha(verses: Verse[]): Verse[] {
   return out.map((v, i) => ({ ...v, verse_number: i + 1 }));
 }
 
-// Get all 114 chapters
+// Sûre listesi: gömülü statik veriden gelir, API'ye hiç gidilmez.
+// Böylece uygulama internetsiz de açılabilir.
 export async function getChapters(): Promise<Chapter[]> {
-  const cacheKey = "quran_chapters_tr_v2";
+  const cacheKey = "quran_chapters_tr_v3";
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey);
   }
 
-  // Try localStorage
-  try {
-    const local = localStorage.getItem(cacheKey);
-    if (local) {
-      const parsed = normalizeChapters(JSON.parse(local));
-      cache.set(cacheKey, parsed);
-      return parsed;
-    }
-  } catch (e) {
-    // Ignore storage issues
-  }
-
-  try {
-    const res = await fetch(`${BASE_URL}/chapters?language=tr`);
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    const data = await res.json();
-    const chapters: Chapter[] = normalizeChapters(data.chapters || []);
-    cache.set(cacheKey, chapters);
-    try {
-      localStorage.setItem(cacheKey, JSON.stringify(chapters));
-    } catch (e) {}
-    return chapters;
-  } catch (err) {
-    console.warn("API error fetching chapters, using local fallback", err);
-    const localFallback = normalizeChapters(
-      (chaptersLocal as any).chapters || [],
-    );
-    cache.set(cacheKey, localFallback);
-    return localFallback;
-  }
+  const chapters = normalizeChapters((chaptersLocal as any).chapters || []);
+  cache.set(cacheKey, chapters);
+  return chapters;
 }
 
-// Get verses by chapter with word-by-word Turkish translations and Diyanet(77) + Elmalılı(52)
+// Sûrenin âyetleri: gömülü offline veriden okunur.
 export async function getVersesByChapter(
   chapterId: number,
   page: number = 1,
   perPage: number = 100,
 ): Promise<{ verses: Verse[]; totalVerses: number; totalPages: number }> {
-  const cacheKey = `verses_ch_v3_${chapterId}_p_${page}_sz_${perPage}`;
+  const cacheKey = `verses_ch_offline_${chapterId}`;
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey);
   }
 
-  // Fast starter cache for Al-Fatiha
-  if (chapterId === 1 && page === 1) {
-    const fatihaData = (chapter1Local as any).verses as Verse[];
-    if (fatihaData && fatihaData.length > 0) {
-      const result = {
-        verses: normalizeVerses(fatihaData),
-        totalVerses: fatihaData.length,
-        totalPages: 1,
-      };
-      cache.set(cacheKey, result);
-      return result;
-    }
-  }
-
-  // Check localStorage for offline/cached browsing
-  try {
-    const stored = localStorage.getItem(cacheKey);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed?.verses) parsed.verses = normalizeVerses(parsed.verses);
-      cache.set(cacheKey, parsed);
-      return parsed;
-    }
-  } catch (e) {}
-
-  const url = `${BASE_URL}/verses/by_chapter/${chapterId}?language=tr&words=true&word_fields=text_uthmani,translation&translations=77,52&page=${page}&per_page=${perPage}`;
-
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Âyetler yüklenemedi (HTTP ${res.status})`);
-  }
-  const data = await res.json();
-  const rawVerses: Verse[] = data.verses || [];
-  const verses = normalizeVerses(
-    chapterId === 1 ? stripBasmalaFromFatiha(rawVerses) : rawVerses,
-  );
-
-  const pagination = data.pagination || {
-    total_records: verses.length,
-    total_pages: 1,
-  };
-
+  const verses = await getOfflineChapter(chapterId);
+  const totalPages = Math.max(1, Math.ceil(verses.length / perPage));
+  const start = (page - 1) * perPage;
   const result = {
-    verses,
-    totalVerses: pagination.total_records,
-    totalPages: pagination.total_pages,
+    verses: verses.slice(start, start + perPage),
+    totalVerses: verses.length,
+    totalPages,
   };
 
   cache.set(cacheKey, result);
-  try {
-    localStorage.setItem(cacheKey, JSON.stringify(result));
-  } catch (e) {}
-
   return result;
 }
 
-// Get verses by Mushaf page (1 to 604)
+// Mushaf sayfası (1-604): gömülü offline veriden okunur.
 export async function getVersesByPage(
   pageNumber: number,
 ): Promise<{ verses: Verse[]; pageNumber: number }> {
-  const cacheKey = `verses_page_v3_${pageNumber}`;
+  const cacheKey = `verses_page_offline_${pageNumber}`;
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey);
   }
 
-  try {
-    const stored = localStorage.getItem(cacheKey);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed?.verses) parsed.verses = normalizeVerses(parsed.verses);
-      cache.set(cacheKey, parsed);
-      return parsed;
-    }
-  } catch (e) {}
-
-  const url = `${BASE_URL}/verses/by_page/${pageNumber}?language=tr&words=true&word_fields=text_uthmani,translation&translations=77,52`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Sayfa yüklenemedi (HTTP ${res.status})`);
-  }
-  const data = await res.json();
-  const rawVerses: Verse[] = data.verses || [];
-  // Fâtiha sayfasında besmele ayet olmaktan çıkarılıp başlığa alınır
-  const verses = normalizeVerses(
-    rawVerses.some((v) => v.verse_key === "1:1")
-      ? stripBasmalaFromFatiha(rawVerses)
-      : rawVerses,
-  );
-
-  const result = {
-    verses,
-    pageNumber,
-  };
+  const verses = await getOfflinePage(pageNumber);
+  const result = { verses, pageNumber };
 
   cache.set(cacheKey, result);
-  try {
-    localStorage.setItem(cacheKey, JSON.stringify(result));
-  } catch (e) {}
-
   return result;
 }
 
-// Get verses by Juz (1 to 30)
+// Cüz (1-30): gömülü offline veriden okunur.
 export async function getVersesByJuz(
   juzNumber: number,
   page: number = 1,
   perPage: number = 50,
 ): Promise<{ verses: Verse[]; totalVerses: number; totalPages: number }> {
-  const cacheKey = `verses_juz_v3_${juzNumber}_p_${page}_sz_${perPage}`;
+  const cacheKey = `verses_juz_offline_${juzNumber}`;
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey);
   }
 
-  const url = `${BASE_URL}/verses/by_juz/${juzNumber}?language=tr&words=true&word_fields=text_uthmani,translation&translations=77,52&page=${page}&per_page=${perPage}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Cüz yüklenemedi (HTTP ${res.status})`);
-  }
-  const data = await res.json();
-  const verses: Verse[] = normalizeVerses(data.verses || []);
-
-  const pagination = data.pagination || {
-    total_records: verses.length,
-    total_pages: 1,
-  };
-
+  const all = await getOfflineJuz(juzNumber);
+  const totalPages = Math.max(1, Math.ceil(all.length / perPage));
+  const start = (page - 1) * perPage;
   const result = {
-    verses,
-    totalVerses: pagination.total_records,
-    totalPages: pagination.total_pages,
+    verses: all.slice(start, start + perPage),
+    totalVerses: all.length,
+    totalPages,
   };
 
   cache.set(cacheKey, result);
@@ -449,46 +344,65 @@ export async function getChapterInfo(
     return info;
   }
 
-  // Fallback to API if static data not available
-  try {
-    const res = await fetch(
-      `${BASE_URL}/chapters/${chapterId}/info?language=tr`,
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    const info = data.chapter_info;
-    cache.set(cacheKey, info);
-    return info;
-  } catch (err) {
-    return null;
-  }
+  // Statik veride yoksa null
+  return null;
 }
 
-// Search across Quran with Turkish translations
+// Kur'an içi arama: gömülü veri üzerinde çalışır, internetsiz de sonuç verir.
+// Kelime anlamlarında, Arapça metinde ve âyet meallerinde arar.
 export async function searchQuran(
   query: string,
   page: number = 1,
   size: number = 20,
 ) {
-  const trimmed = query.trim();
-  if (!trimmed) return { results: [], totalResults: 0 };
+  const trimmed = query.trim().toLocaleLowerCase("tr");
+  if (!trimmed) return { results: [], totalResults: 0, totalPages: 1 };
 
-  const url = `${BASE_URL}/search?q=${encodeURIComponent(trimmed)}&language=tr&page=${page}&size=${size}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Arama gerçekleştirilemedi (HTTP ${res.status})`);
+  const payload = await offlineVeriYukle();
+  const eslesenler: any[] = [];
+
+  for (const pageVerses of payload.pages) {
+    if (!pageVerses) continue;
+    for (const verse of pageVerses) {
+      const meal = verse.translations?.[0]?.text || "";
+
+      // Arapça kelime veya Türkçe kelime anlamı
+      const kelimeSayisi = verse.words.filter(
+        (w) =>
+          w.text_uthmani.includes(trimmed) ||
+          (w.translation?.text || "").toLocaleLowerCase("tr").includes(trimmed),
+      ).length;
+      const mealDahil = meal.toLocaleLowerCase("tr").includes(trimmed);
+
+      if (kelimeSayisi > 0 || mealDahil) {
+        eslesenler.push({
+          verse_key: verse.verse_key,
+          page_number: verse.page_number,
+          text: verse.words
+            .filter((w) => w.char_type_name === "word")
+            .map((w) => w.text_uthmani)
+            .join(""),
+          translations: [{ text: meal }],
+          eslesme: kelimeSayisi,
+          sira: verse.page_number * 1000 + verse.verse_number,
+        });
+      }
+    }
   }
-  const data = await res.json();
-  const results = (data.search?.results || []).map((r: any) => ({
-    ...r,
-    translations: (r.translations || []).map((t: any) => ({
-      ...t,
-      text: decodeHtmlEntities(t.text || ""),
-    })),
-  }));
+
+  // Önce tam kelime eşleşmesi, sonra meal eşleşmesi; sonra sıra
+  eslesenler.sort((a, b) => {
+    if (b.eslesme !== a.eslesme) return b.eslesme - a.eslesme;
+    return a.sira - b.sira;
+  });
+
+  const totalResults = eslesenler.length;
+  const totalPages = Math.max(1, Math.ceil(totalResults / size));
+  const start = (page - 1) * size;
+
   return {
-    results,
-    totalResults: data.search?.total_results || 0,
-    totalPages: data.search?.total_pages || 1,
+    results: eslesenler.slice(start, start + size),
+    totalResults,
+    totalPages,
   };
 }

@@ -8,6 +8,11 @@ import {
   getVerseAudioUrl,
 } from "./services/quranApi";
 import {
+  findChapterStartPage,
+  findJuzStartPage,
+  findPageOfVerse,
+} from "./services/offlineData";
+import {
   Chapter,
   Verse,
   AppSettings,
@@ -283,17 +288,17 @@ export default function App() {
   };
 
   // Navigation callbacks
-  const handleSelectChapter = (chId: number) => {
+  const handleSelectChapter = async (chId: number) => {
     setSelectedChapterId(chId);
     setCurrentPage(1);
 
     // Mushaf modunda içerik sayfa numarasına bağlıdır; seçilen sûrenin
     // başlangıç sayfasına atlanmalı, aksi halde aynı sayfa tekrar yüklenir.
     if (settings.displayMode === "mushaf") {
-      const target = chapters.find((c) => c.id === chId);
-      if (target?.pages?.[0]) {
-        setMushafPageNumber(target.pages[0]);
-      }
+      const fromApi = chapters.find((c) => c.id === chId)?.pages?.[0];
+      // Gömülü veri her zaman kesin; API sayfa listesi yedek
+      const target = await findChapterStartPage(chId).catch(() => fromApi ?? 1);
+      setMushafPageNumber(target);
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -304,17 +309,27 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleJumpToJuz = (juzNum: number) => {
+  const handleJumpToJuz = async (juzNum: number) => {
     setCurrentJuz(juzNum);
-    const approxPage = juzNum === 1 ? 1 : (juzNum - 1) * 20 + 2;
-    handleJumpToPage(approxPage);
+    // Yaklaşık sayfa hesabı yerine gömülü veriden kesin başlangıç sayfası
+    const startPage = await findJuzStartPage(juzNum);
+    handleJumpToPage(startPage);
   };
 
-  const handleNavigateToVerse = (chId: number, verseNum: number) => {
-    setSelectedChapterId(chId);
-    setCurrentPage(1);
+  const handleNavigateToVerse = async (chId: number, verseNum: number) => {
     setIsSearchOpen(false);
     setIsBookmarksOpen(false);
+
+    // Mushaf modunda o âyetin bulunduğu sayfaya atlanır
+    if (settings.displayMode === "mushaf") {
+      const target = await findPageOfVerse(`${chId}:${verseNum}`);
+      setSelectedChapterId(chId);
+      handleJumpToPage(target);
+      return;
+    }
+
+    setSelectedChapterId(chId);
+    setCurrentPage(1);
 
     // Wait for verses to load and render before scrolling
     setTimeout(() => {

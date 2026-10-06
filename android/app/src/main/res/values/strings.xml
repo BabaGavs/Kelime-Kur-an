@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kelime Kur\'an</string>
+    <string name="title_activity_main">Kelime Kur\'an</string>
+    <string name="package_name">com.babagavs.kelimekur</string>
+    <string name="custom_url_scheme">com.babagavs.kelimekur</string>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Madani renk paleti (quran/quran_android -> colors.xml)
+    Uygulama paletindeki değerlerle birebir aynıdır.
+-->
+<resources>
+    <!-- Accent: Madani accent_color (#00838f, Material Teal 800) -->
+    <color name="colorPrimary">#00838F</color>
+    <color name="colorPrimaryDark">#00695C</color>
+    <color name="colorAccent">#00838F</color>
+
+    <!-- Yüzeyler -->
+    <color name="surface">#FAF8F7</color>
+    <color name="mushafPage">#FFF4CB</color>
+    <color name="splashBackground">#00838F</color>
+
+    <!-- Metin -->
+    <color name="textPrimary">#212529</color>
+    <color name="textSecondary">#44464E</color>
+</resources>
