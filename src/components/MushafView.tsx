@@ -19,6 +19,9 @@ import {
 import { getVerseAudioUrl } from "../services/quranApi";
 import { juzNameAr } from "../data/juzNames";
 
+/** Madani Mushaf sayfalarının sabit satır sayısı */
+const MUSHAF_LINES = 15;
+
 // Latin rakamlarını Arap rakamlarına çevirir (Madani alt bar)
 function toArabicDigits(n: number): string {
   return String(n).replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]);
@@ -126,13 +129,20 @@ export const MushafView: React.FC<MushafViewProps> = ({
       // Stale layout'u engelle: --fit sıfırlandı, yerleşimi zorla yeniden hesapla
       void content.getBoundingClientRect();
 
-      // Oransal küçültme: taşma oranına göre ölçekle
+      // Madani'de her sayfa sabit 15 satırlık bir ızgaradır ve satırlar
+      // sayfayı tamamen doldurur. Satır yüksekliğini sabitleyip puntolayı
+      // buna sığacak şekilde küçültüyoruz (taşma yoksa dokunmuyoruz).
+      const line = content.clientHeight / MUSHAF_LINES;
+      frame.style.setProperty("--line-h", `${line.toFixed(2)}px`);
+      void content.getBoundingClientRect();
+
+      // Oransal küçültme: satır yüksekliği sabit, yalnızca puntola ölçeklenir
       let scale = 1;
-      for (let i = 0; i < 16; i++) {
+      for (let i = 0; i < 18; i++) {
         const over = content.scrollHeight - content.clientHeight;
         if (over <= 1) break;
         const ratio = content.clientHeight / content.scrollHeight;
-        scale = Math.max(0.28, scale * ratio * 0.95);
+        scale = Math.max(0.28, scale * ratio * 0.97);
         frame.style.setProperty("--fit", scale.toFixed(3));
         // Yeni --fit uygulandı, yerleşimi tazele
         void content.getBoundingClientRect();
@@ -252,13 +262,14 @@ export const MushafView: React.FC<MushafViewProps> = ({
   const currentJuz = verses.length > 0 ? verses[0].juz_number : 1;
   const chapterList = Object.keys(versesByChapter).map(Number);
   const primaryChapter = chapters.find((c) => c.id === chapterList[0]);
-  // Madani Latin transliterasyon kullanıyor (Al-Baqarah)
+  // Rozet metni: Türkçe sûre adı (Bakara, Âl-i İmrân ...)
   const surahLabel =
-    chapterList.length === 1
-      ? (chapters.find((c) => c.id === chapterList[0]) as any)?.name_simple ||
-        primaryChapter?.translated_name.name ||
-        ""
-      : `${chapterList.length} Sûre`;
+    chapterList.length === 0
+      ? ""
+      : chapterList
+          .map((id) => chapters.find((c) => c.id === id)?.translated_name.name)
+          .filter(Boolean)
+          .join(", ");
 
   const hasPrev = pageNumber > 1;
   const hasNext = pageNumber < 604;
@@ -439,7 +450,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
 
       {/* ---------- ALT BAR (Madani) ---------- */}
       <div className="mushaf-bottombar">
-        {/* Sol: önceki ok, sonraki ok ve Arap rakamı sayfa numarası */}
+        {/* Sol: önceki ok ve Arap rakamı sayfa numarası */}
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
@@ -455,6 +466,11 @@ export const MushafView: React.FC<MushafViewProps> = ({
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
+          <span className="mushaf-page-num">{toArabicDigits(pageNumber)}</span>
+        </div>
+
+        {/* Sağ: sonraki ok, mod anahtarı ve dinleme (kenardan içeride) */}
+        <div className="flex items-center gap-3 mr-6 sm:mr-12">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -469,11 +485,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
-          <span className="mushaf-page-num">{toArabicDigits(pageNumber)}</span>
-        </div>
 
-        {/* Sağ tarafta mod anahtarı + dinleme (kenardan biraz içeride) */}
-        <div className="flex items-center gap-3 mr-6 sm:mr-12">
           {onSwitchToWordMode && (
             <button
               onClick={(e) => {

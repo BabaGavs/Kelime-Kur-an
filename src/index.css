@@ -143,20 +143,21 @@ body {
    text-align-last: justify ile son satır da yaslanır.
    ============================================ */
 .mushaf-verse-text {
-  line-height: 1.6;
+  /* Madani hat düzeni: satır yüksekliği sayfa yüksekliğinin 1/15'idir
+     (JS `--line-h` ile px olarak yazılır), puntola buna sığacak şekilde
+     ölçeklenir. Böylece 15 satır sayfayı tamamen doldurur. */
+  line-height: var(--line-h, 1.6);
   text-align: justify;
   text-align-last: justify;
-  word-spacing: 0.06em;
+  word-spacing: 0.05em;
   -webkit-hyphens: none;
   hyphens: none;
-  /* Klasik Mushaf satır yüksekliği */
   line-break: loose;
 }
 
 @media (max-width: 639px) {
   .mushaf-verse-text {
-    line-height: 1.7;
-    word-spacing: 0.04em;
+    word-spacing: 0.03em;
   }
 }
 
@@ -197,10 +198,11 @@ body {
 }
 
 .ayah-mark__num {
-  font-size: calc(0.62em * var(--fit, 1));
-  font-weight: 600;
+  font-size: calc(0.72em * var(--fit, 1));
+  font-weight: 700;
   letter-spacing: -0.02em;
-  transform: translateY(calc(0.06em * var(--fit, 1)));
+  color: #5a3f12;
+  transform: translateY(calc(0.05em * var(--fit, 1)));
 }
 
 /* ============================================
@@ -835,8 +837,9 @@ body.mushaf-fit-lock {
   flex: 1 1 0%;
   min-height: 0;
   overflow: hidden;
-  /* Sayfa metni dikeyde ortalanır (Mushaf görünümü) */
-  justify-content: center;
+  /* Madani sayfalarında metin üstten başlar; az âyetli sayfalarda
+     (Fâtiha gibi) alt kısım boş kalır, ortalanmaz. */
+  justify-content: flex-start;
 }
 
 /* ============================================
