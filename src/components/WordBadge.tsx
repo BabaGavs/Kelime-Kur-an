@@ -170,7 +170,12 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
       {/* Arapça kelime */}
       <span
         dir="rtl"
-        className={`${fontClass} leading-relaxed tracking-wide text-stone-900 transition-colors group-hover:text-emerald-700`}
+        // Mushaf hattında satır yüksekliği 15 satırlık sayfa ızgarasına
+        // (--line-h) göre sıkı tutulur; böylece puntola küçülmeden sığar.
+        // Kelime Meali modunda normal leading kalır.
+        className={`${fontClass} tracking-wide text-stone-900 transition-colors group-hover:text-emerald-700 ${
+          flow === "inline-block" ? "leading-[1.4]" : "leading-relaxed"
+        }`}
         // Mushaf modunda krem sayfa üzerinde mürekkep rengi
         style={{
           fontSize: `calc(${1.75 * fontSizeMultiplier}rem * var(--fit, 1))`,
