@@ -11,7 +11,6 @@
     "lint": "tsc --noEmit",
     "offline-data": "node scripts/build-offline-data.mjs",
     "mushaf:images": "python3 scripts/build-mushaf-images.py ${MUSHAF_PDF:-/tmp/madinah.pdf}",
-    "mushaf:layout": "python3 scripts/build-mushaf-layout.py",
     "cap:sync": "npm run build && cap sync android",
     "apk": "npm run cap:sync && cd android && ./gradlew assembleDebug",
     "apk:release": "npm run cap:sync && cd android && ./gradlew assembleRelease"

@@ -355,17 +355,12 @@ export const MushafView: React.FC<MushafViewProps> = ({
         }}
         onMouseEnter={keepNavVisible}
       >
-        {/* Madani görsel modu: gerçek kashida'li sayfa + şeffaf tıklama
-            katmanı. Ölçek sabittir, sayfa değişince puntola değişmez. */}
+        {/* Madani görsel modu: gerçek kashida'lı sayfa, sabit ölçek.
+            Bilerek etkileşimsiz — kelime anlamı yalnızca Kelime Meali
+            modunda çalışır. */}
         {useImagePages ? (
           <div key={pageNumber} className="mushaf-fit-frame mushaf-page-enter">
-            <MushafPage
-              pageNumber={pageNumber}
-              verses={verses}
-              alwaysShowMeaning={settings.alwaysShowWordMeaning}
-              fontSizeMultiplier={settings.fontSizeMultiplier}
-              fontClass={fontClass}
-            />
+            <MushafPage pageNumber={pageNumber} />
           </div>
         ) : (
           <div

@@ -331,8 +331,7 @@ body {
 .mushaf-image-holder {
   position: relative;
   /* PDF sayfa oranı (550 x 765 pt). aspect-ratio + max-* birlikte
-     kullanılınca kutu ekrana sığarken oran korunur; böylece görsel
-     ve şeffaf katman birebir aynı kutuyu paylaşır. */
+     kullanılınca kutu ekrana sığarken oran korunur. */
   aspect-ratio: 550 / 765;
   max-width: 100%;
   max-height: 100%;
@@ -346,47 +345,8 @@ body {
   display: block;
   user-select: none;
   -webkit-user-drag: none;
-}
-
-.mushaf-hit-layer {
-  position: absolute;
-  inset: 0;
-  /* Kullanıcı metni görmez ama ekran okuyucu okur ve tıklama çalışır.
-     Tailwind'in text-stone-900'u burada ezilmeli. */
-  color: transparent !important;
+  /* Saf okuma: görsel üzerinde metin seçimi veya dalgınlık olmasın */
   pointer-events: none;
-}
-
-.mushaf-hit-layer,
-.mushaf-hit-layer * {
-  color: transparent !important;
-  text-shadow: none !important;
-  text-decoration-color: transparent !important;
-}
-
-/* Anlam kutusu katmanın parçası ama GÖRÜNMEMELİ: şeffaf kuralı
-   kelime yazısını gizler, açıklamayı gizlemez. */
-.mushaf-hit-layer .word-popup,
-.mushaf-hit-layer .word-popup * {
-  color: var(--text-primary) !important;
-  text-shadow: none !important;
-}
-
-.mushaf-hit-layer > * {
-  pointer-events: auto;
-}
-
-.mushaf-hit-line {
-  position: absolute;
-  /* Görselin metin alanı kadar genişlik */
-  inset-inline: 7%;
-  line-height: 1;
-  white-space: nowrap;
-  overflow: visible;
-  /* Kelimeler görseldeki gibi iki yana yayılır; tıklama alanları
-     böylece mürekkeple örtüşür. */
-  text-align: justify;
-  text-align-last: justify;
 }
 :root {
   --mushaf-accent: #b57e2a;
