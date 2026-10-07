@@ -25,6 +25,10 @@ public/offline/
 # Arapça fontlar gömülü kalmalı (tam offline çalışma) — public/fonts
 # kasıtlı olarak ignore edilmiyor.
 
+# Madani sayfa görselleri (~80 MB) build-time üretilir, depoda tutulmaz.
+# Üretim: npm run mushaf:images && npm run mushaf:layout
+public/mushaf/
+
 # Günlükler
 npm-debug.log*
 yarn-debug.log*

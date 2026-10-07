@@ -47,6 +47,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontSizeMultiplier: 1.0,
   translationSource: 77, // Diyanet
   alwaysShowWordMeaning: false,
+  // Gerçek Madani render'ı (kashida dahil), sabit ölçek
+  mushafImage: true,
 };
 
 export default function App() {

@@ -18,8 +18,9 @@ import {
 } from "lucide-react";
 import { getVerseAudioUrl } from "../services/quranApi";
 import { juzNameAr } from "../data/juzNames";
+import { MushafPage } from "./MushafPage";
 
-/** Madani Mushaf sayfalarının sabit satır sayısı */
+/** Madani Mushaf sayfalarının sabit satır sayısı (metin modu) */
 const MUSHAF_LINES = 15;
 
 // Latin rakamlarını Arap rakamlarına çevirir (Madani alt bar)
@@ -250,6 +251,9 @@ export const MushafView: React.FC<MushafViewProps> = ({
         ? "font-arabic"
         : "font-serif";
 
+  // Görsel (kashida'lı PDF render'ı) modu varsayılan; ayarlardan kapatılabilir
+  const useImagePages = settings.mushafImage !== false;
+
   // Sayfadaki sûreleri grupla
   const versesByChapter: { [chapterId: number]: Verse[] } = {};
   verses.forEach((v) => {
@@ -351,101 +355,115 @@ export const MushafView: React.FC<MushafViewProps> = ({
         }}
         onMouseEnter={keepNavVisible}
       >
-        <div
-          key={pageNumber}
-          ref={frameRef}
-          className="mushaf-fit-frame mushaf-page-enter"
-          style={{
-            // Tam ekran sayfa: üst/alt neredeyse sıfır, yanlarda okuma payı
-            paddingTop: "calc(0.15rem * var(--fit, 1))",
-            paddingBottom: "calc(0.15rem * var(--fit, 1))",
-            paddingInline: "calc(0.5rem * var(--fit, 1))",
-          }}
-        >
-          {/* Kur'an metni - dikeyde ortalanmış */}
+        {/* Madani görsel modu: gerçek kashida'li sayfa + şeffaf tıklama
+            katmanı. Ölçek sabittir, sayfa değişince puntola değişmez. */}
+        {useImagePages ? (
+          <div key={pageNumber} className="mushaf-fit-frame mushaf-page-enter">
+            <MushafPage
+              pageNumber={pageNumber}
+              verses={verses}
+              alwaysShowMeaning={settings.alwaysShowWordMeaning}
+              fontSizeMultiplier={settings.fontSizeMultiplier}
+              fontClass={fontClass}
+            />
+          </div>
+        ) : (
           <div
-            ref={contentRef}
-            className="mushaf-fit-content flex flex-col"
-            style={{ gap: "calc(0.45rem * var(--fit, 1))" }}
+            key={pageNumber}
+            ref={frameRef}
+            className="mushaf-fit-frame mushaf-page-enter"
+            style={{
+              // Tam ekran sayfa: üst/alt neredeyse sıfır, yanlarda okuma payı
+              paddingTop: "calc(0.15rem * var(--fit, 1))",
+              paddingBottom: "calc(0.15rem * var(--fit, 1))",
+              paddingInline: "calc(0.5rem * var(--fit, 1))",
+            }}
           >
-            {Object.entries(versesByChapter).map(([chIdStr, chVerses]) => {
-              const chObj = chapters.find(
-                (c) => c.id === parseInt(chIdStr, 10),
-              );
-              const startsSurah = chVerses.some((v) => v.verse_number === 1);
+            {/* Kur'an metni - dikeyde ortalanmış */}
+            <div
+              ref={contentRef}
+              className="mushaf-fit-content flex flex-col"
+              style={{ gap: "calc(0.45rem * var(--fit, 1))" }}
+            >
+              {Object.entries(versesByChapter).map(([chIdStr, chVerses]) => {
+                const chObj = chapters.find(
+                  (c) => c.id === parseInt(chIdStr, 10),
+                );
+                const startsSurah = chVerses.some((v) => v.verse_number === 1);
 
-              return (
-                <div
-                  key={chIdStr}
-                  className="flex flex-col"
-                  style={{ gap: "calc(0.3rem * var(--fit, 1))" }}
-                >
-                  {/* Sûre başlığı - yalnızca metin */}
-                  {startsSurah && chObj && (
-                    <div className="text-center">
-                      <div
-                        dir="rtl"
-                        className="mushaf-surah-title font-arabic font-bold"
-                        style={{ fontSize: "calc(1.5rem * var(--fit, 1))" }}
-                      >
-                        سُورَةُ {chObj.name_arabic}
-                      </div>
-                      {chObj.bismillah_pre && (
+                return (
+                  <div
+                    key={chIdStr}
+                    className="flex flex-col"
+                    style={{ gap: "calc(0.3rem * var(--fit, 1))" }}
+                  >
+                    {/* Sûre başlığı - yalnızca metin */}
+                    {startsSurah && chObj && (
+                      <div className="text-center">
                         <div
                           dir="rtl"
-                          className="mushaf-bismillah font-arabic"
-                          style={{
-                            fontSize: "calc(1.1rem * var(--fit, 1))",
-                            marginTop: "calc(0.22rem * var(--fit, 1))",
-                          }}
+                          className="mushaf-surah-title font-arabic font-bold"
+                          style={{ fontSize: "calc(1.5rem * var(--fit, 1))" }}
                         >
-                          بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                          سُورَةُ {chObj.name_arabic}
                         </div>
-                      )}
-                      <div
-                        className="mx-auto w-16 h-px"
-                        style={{
-                          background: "var(--border-color)",
-                          marginTop: "calc(0.28rem * var(--fit, 1))",
-                          marginBottom: "calc(0.18rem * var(--fit, 1))",
-                        }}
-                      />
+                        {chObj.bismillah_pre && (
+                          <div
+                            dir="rtl"
+                            className="mushaf-bismillah font-arabic"
+                            style={{
+                              fontSize: "calc(1.1rem * var(--fit, 1))",
+                              marginTop: "calc(0.22rem * var(--fit, 1))",
+                            }}
+                          >
+                            بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                          </div>
+                        )}
+                        <div
+                          className="mx-auto w-16 h-px"
+                          style={{
+                            background: "var(--border-color)",
+                            marginTop: "calc(0.28rem * var(--fit, 1))",
+                            marginBottom: "calc(0.18rem * var(--fit, 1))",
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Kelimeler: Mushaf hattı gibi satırlar iki yana yaslanır */}
+                    <div
+                      dir="rtl"
+                      className="mushaf-verse-text mushaf-ink"
+                      style={{
+                        fontSize: `calc(1.75rem * var(--fit, 1))`,
+                        marginBlock: "calc(0.3rem * var(--fit, 1))",
+                      }}
+                    >
+                      {chVerses.map((v) => (
+                        <React.Fragment key={v.id}>
+                          {v.words.map((w) => (
+                            <WordBadge
+                              key={`${v.id}-${w.id}`}
+                              word={w}
+                              verse={v}
+                              chapterName={chObj?.translated_name.name}
+                              alwaysShowMeaning={settings.alwaysShowWordMeaning}
+                              fontClass={fontClass}
+                              fontSizeMultiplier={settings.fontSizeMultiplier}
+                              flow="inline-block"
+                            />
+                          ))}
+                        </React.Fragment>
+                      ))}
                     </div>
-                  )}
-
-                  {/* Kelimeler: Mushaf hattı gibi satırlar iki yana yaslanır */}
-                  <div
-                    dir="rtl"
-                    className="mushaf-verse-text mushaf-ink"
-                    style={{
-                      fontSize: `calc(1.75rem * var(--fit, 1))`,
-                      marginBlock: "calc(0.3rem * var(--fit, 1))",
-                    }}
-                  >
-                    {chVerses.map((v) => (
-                      <React.Fragment key={v.id}>
-                        {v.words.map((w) => (
-                          <WordBadge
-                            key={`${v.id}-${w.id}`}
-                            word={w}
-                            verse={v}
-                            chapterName={chObj?.translated_name.name}
-                            alwaysShowMeaning={settings.alwaysShowWordMeaning}
-                            fontClass={fontClass}
-                            fontSizeMultiplier={settings.fontSizeMultiplier}
-                            flow="inline-block"
-                          />
-                        ))}
-                      </React.Fragment>
-                    ))}
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
 
-          {/* Sayfa sonu */}
-        </div>
+            {/* Sayfa sonu */}
+          </div>
+        )}
       </div>
 
       {/* ---------- ALT BAR (Madani) ---------- */}

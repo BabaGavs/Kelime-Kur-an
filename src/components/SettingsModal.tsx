@@ -137,6 +137,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
           </div>
 
+          {/* Mushaf Görünümü: gerçek Madani render'ı (kashida) */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-[10px] sm:text-xs font-semibold text-stone-900 block">
+                Madani Görünümü (Kashida)
+              </span>
+              <span className="text-[9px] sm:text-[11px] text-stone-500 block">
+                Açıkken sayfalar gerçek Madani Mushaf görüntüsü olarak
+                gösterilir: sabit ölçek, gerçek kashida. Kapalıyken metin
+                tabanlı hat kullanılır.
+              </span>
+            </div>
+            <button
+              onClick={() =>
+                onUpdateSettings({ mushafImage: !settings.mushafImage })
+              }
+              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors shrink-0 ${
+                settings.mushafImage ? "bg-emerald-600" : "bg-stone-300"
+              }`}
+              aria-label="Madani görünümü (kashida)"
+            >
+              <div
+                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                  settings.mushafImage ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+
           {/* Meal Kaynağı */}
           <div>
             <label className="block text-[10px] sm:text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5 sm:mb-2">

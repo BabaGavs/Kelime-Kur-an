@@ -88,4 +88,10 @@ export interface AppSettings {
   fontSizeMultiplier: number;
   translationSource: TranslationSource;
   alwaysShowWordMeaning: boolean; // if false, only show on hover/tap
+  /**
+   * Mushaf sayfaları gerçek Madani render'ı (WebP) olarak gösterilsin mi?
+   * true  -> kashida'lı PDF görseli + şeffaf tıklama katmanı (sabit ölçek)
+   * false -> metin tabanlı render (puntola sığdırma ile ölçeklenir)
+   */
+  mushafImage: boolean;
 }
