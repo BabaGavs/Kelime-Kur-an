@@ -135,20 +135,8 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
         title={`${verse.verse_key} numaralı âyet sonu`}
         aria-label={`${verse.verse_number}. âyet sonu`}
       >
-        <span
-          className="ayah-mark__paren ayah-mark__paren--r"
-          aria-hidden="true"
-        >
-          &#x276E;
-        </span>
         <span className="ayah-mark__num">
           {toArabicDigits(verse.verse_number)}
-        </span>
-        <span
-          className="ayah-mark__paren ayah-mark__paren--l"
-          aria-hidden="true"
-        >
-          &#x276F;
         </span>
       </span>
     );

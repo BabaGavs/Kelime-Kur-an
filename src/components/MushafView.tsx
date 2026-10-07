@@ -13,9 +13,16 @@ import {
   Play,
   Square,
   Bookmark,
-  Menu,
+  Search,
+  Grid2x2,
 } from "lucide-react";
 import { getVerseAudioUrl } from "../services/quranApi";
+import { juzNameAr } from "../data/juzNames";
+
+// Latin rakamlarını Arap rakamlarına çevirir (Madani alt bar)
+function toArabicDigits(n: number): string {
+  return String(n).replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]);
+}
 
 interface MushafViewProps {
   pageNumber: number;
@@ -27,6 +34,8 @@ interface MushafViewProps {
   onOpenMenu?: () => void;
   /** Kelime Meali moduna geç */
   onSwitchToWordMode?: () => void;
+  /** Arama panelini aç */
+  onOpenSearch?: () => void;
   /** Bu sayfa yer imlerinde mi */
   isPageBookmarked?: boolean;
   onTogglePageBookmark?: (page: number) => void;
@@ -40,6 +49,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
   onPageChange,
   onOpenMenu,
   onSwitchToWordMode,
+  onOpenSearch,
   isPageBookmarked = false,
   onTogglePageBookmark,
 }) => {
@@ -238,100 +248,243 @@ export const MushafView: React.FC<MushafViewProps> = ({
     versesByChapter[chId].push(v);
   });
 
-  // Konum bilgisi: cüz, sûre sayısı ve sûre adları
+  // Konum bilgisi: cüz ve o an okunan sûre (Madani üst barı)
   const currentJuz = verses.length > 0 ? verses[0].juz_number : 1;
   const chapterList = Object.keys(versesByChapter).map(Number);
   const primaryChapter = chapters.find((c) => c.id === chapterList[0]);
-  const surahNames =
-    chapterList
-      .map((id) => chapters.find((c) => c.id === id)?.translated_name.name)
-      .filter(Boolean)
-      .join(" · ") ||
-    primaryChapter?.translated_name.name ||
-    "";
+  // Madani Latin transliterasyon kullanıyor (Al-Baqarah)
+  const surahLabel =
+    chapterList.length === 1
+      ? (chapters.find((c) => c.id === chapterList[0]) as any)?.name_simple ||
+        primaryChapter?.translated_name.name ||
+        ""
+      : `${chapterList.length} Sûre`;
 
   const hasPrev = pageNumber > 1;
   const hasNext = pageNumber < 604;
 
   return (
-    // Mushaf tam ekran: dışarıda beyaz şerit kalmaz
-    <div
-      ref={surfaceRef}
-      className="h-full w-full flex flex-col relative mushaf-page-surface"
-      style={{
-        borderRadius: 0,
-        borderWidth: 0,
-        // Dokunmatik yatay sürükleme: tarayıcının kendi kaydırmasını engelle
-        touchAction: "pan-y",
-      }}
-      onPointerDown={handleSwipeStart}
-      onPointerUp={handleSwipeEnd}
-      onPointerCancel={() => {
-        swipeStart.current = null;
-      }}
-      onMouseEnter={keepNavVisible}
-    >
-      <div
-        key={pageNumber}
-        ref={frameRef}
-        className="mushaf-fit-frame mushaf-page-enter"
-        style={{
-          // Tam ekran sayfa: üst/alt neredeyse sıfır, yanlarda okuma payı
-          paddingTop: "calc(0.15rem * var(--fit, 1))",
-          paddingBottom: "calc(0.15rem * var(--fit, 1))",
-          paddingInline: "calc(0.5rem * var(--fit, 1))",
-        }}
-      >
-        {/* Üst satır: solda fihrist + konum bilgisi, sağda sayfa dinleme */}
-        <div className="mushaf-fit-header relative flex items-center gap-2">
+    <div className="h-full w-full flex flex-col mushaf-page-surface">
+      {/* ---------- ÜST BAR (Madani) ---------- */}
+      <div className="mushaf-topbar">
+        {/* Sol: yer imi + cüz rozeti */}
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            onClick={() => onTogglePageBookmark?.(pageNumber)}
+            aria-label={
+              isPageBookmarked
+                ? `${pageNumber}. sayfayı yer imlerinden çıkar`
+                : `${pageNumber}. sayfayı yer imlerine ekle`
+            }
+            aria-pressed={!!isPageBookmarked}
+            className={`shrink-0 transition-colors ${
+              isPageBookmarked
+                ? "text-[var(--mushaf-accent)]"
+                : "text-[var(--mushaf-accent)]/50 hover:text-[var(--mushaf-accent)]"
+            }`}
+          >
+            <Bookmark
+              className={`w-4 h-4 ${isPageBookmarked ? "fill-current" : ""}`}
+            />
+          </button>
+          <span className="mushaf-badge mushaf-badge--juz">
+            {juzNameAr(currentJuz)}
+          </span>
+        </div>
+
+        {/* Sağ: sûre rozeti, fihrist, arama, geri */}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="mushaf-badge mushaf-badge--surah truncate">
+            {surahLabel}
+          </span>
+
           {onOpenMenu && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={() => {
+                setShowNavButtons(true);
                 onOpenMenu();
               }}
               aria-label="Fihristi aç"
               title="Fihrist"
-              className="-ml-1 shrink-0 p-1 -translate-y-px rounded-full text-stone-300 hover:text-emerald-700 hover:bg-stone-100 transition-colors"
+              className="shrink-0 text-[var(--mushaf-accent)] hover:opacity-70 transition-opacity"
             >
-              <Menu className="w-5 h-5" />
+              <Grid2x2 className="w-[18px] h-[18px]" />
             </button>
           )}
 
-          <span className="text-[10px] sm:text-[11px] text-stone-400 font-medium truncate">
-            {currentJuz}. Cüz ·{" "}
-            {chapterList.length > 1
-              ? `${chapterList.length} Sûre`
-              : `${primaryChapter?.id ?? 1}. Sûre`}{" "}
-            · {surahNames}
-          </span>
+          {onOpenSearch && (
+            <button
+              onClick={() => {
+                setShowNavButtons(true);
+                onOpenSearch();
+              }}
+              aria-label="Ara"
+              title="Ara"
+              className="shrink-0 text-[var(--mushaf-accent)] hover:opacity-70 transition-opacity"
+            >
+              <Search className="w-[18px] h-[18px]" />
+            </button>
+          )}
 
-          {/* Mod anahtarı başlığın tam ortasında */}
-          <div
-            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-lg bg-stone-100/70 border border-stone-200 p-0.5"
-            style={{ marginInline: "calc(0.25rem * var(--fit, 1))" }}
+          {/* Geri: bir önceki sayfa */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              flashNav();
+              if (hasPrev) onPageChange(pageNumber - 1);
+            }}
+            disabled={!hasPrev}
+            aria-label="Önceki sayfa"
+            className="shrink-0 grid place-items-center w-5 h-5 rounded-md bg-[var(--mushaf-accent)] text-[#fff4cb] disabled:opacity-35 disabled:pointer-events-none transition-opacity"
           >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* ---------- SAYFA ---------- */}
+      <div
+        ref={surfaceRef}
+        className="flex-1 min-h-0 relative flex flex-col"
+        style={{ touchAction: "pan-y" }}
+        onPointerDown={handleSwipeStart}
+        onPointerUp={handleSwipeEnd}
+        onPointerCancel={() => {
+          swipeStart.current = null;
+        }}
+        onMouseEnter={keepNavVisible}
+      >
+        <div
+          key={pageNumber}
+          ref={frameRef}
+          className="mushaf-fit-frame mushaf-page-enter"
+          style={{
+            // Tam ekran sayfa: üst/alt neredeyse sıfır, yanlarda okuma payı
+            paddingTop: "calc(0.15rem * var(--fit, 1))",
+            paddingBottom: "calc(0.15rem * var(--fit, 1))",
+            paddingInline: "calc(0.5rem * var(--fit, 1))",
+          }}
+        >
+          {/* Kur'an metni - dikeyde ortalanmış */}
+          <div
+            ref={contentRef}
+            className="mushaf-fit-content flex flex-col"
+            style={{ gap: "calc(0.45rem * var(--fit, 1))" }}
+          >
+            {Object.entries(versesByChapter).map(([chIdStr, chVerses]) => {
+              const chObj = chapters.find(
+                (c) => c.id === parseInt(chIdStr, 10),
+              );
+              const startsSurah = chVerses.some((v) => v.verse_number === 1);
+
+              return (
+                <div
+                  key={chIdStr}
+                  className="flex flex-col"
+                  style={{ gap: "calc(0.3rem * var(--fit, 1))" }}
+                >
+                  {/* Sûre başlığı - yalnızca metin */}
+                  {startsSurah && chObj && (
+                    <div className="text-center">
+                      <div
+                        dir="rtl"
+                        className="mushaf-surah-title font-arabic font-bold"
+                        style={{ fontSize: "calc(1.5rem * var(--fit, 1))" }}
+                      >
+                        سُورَةُ {chObj.name_arabic}
+                      </div>
+                      {chObj.bismillah_pre && (
+                        <div
+                          dir="rtl"
+                          className="mushaf-bismillah font-arabic"
+                          style={{
+                            fontSize: "calc(1.1rem * var(--fit, 1))",
+                            marginTop: "calc(0.22rem * var(--fit, 1))",
+                          }}
+                        >
+                          بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                        </div>
+                      )}
+                      <div
+                        className="mx-auto w-16 h-px"
+                        style={{
+                          background: "var(--border-color)",
+                          marginTop: "calc(0.28rem * var(--fit, 1))",
+                          marginBottom: "calc(0.18rem * var(--fit, 1))",
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Kelimeler: Mushaf hattı gibi satırlar iki yana yaslanır */}
+                  <div
+                    dir="rtl"
+                    className="mushaf-verse-text mushaf-ink"
+                    style={{
+                      fontSize: `calc(1.75rem * var(--fit, 1))`,
+                      marginBlock: "calc(0.3rem * var(--fit, 1))",
+                    }}
+                  >
+                    {chVerses.map((v) => (
+                      <React.Fragment key={v.id}>
+                        {v.words.map((w) => (
+                          <WordBadge
+                            key={`${v.id}-${w.id}`}
+                            word={w}
+                            verse={v}
+                            chapterName={chObj?.translated_name.name}
+                            alwaysShowMeaning={settings.alwaysShowWordMeaning}
+                            fontClass={fontClass}
+                            fontSizeMultiplier={settings.fontSizeMultiplier}
+                            flow="inline-block"
+                          />
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Sayfa sonu */}
+        </div>
+      </div>
+
+      {/* ---------- ALT BAR (Madani) ---------- */}
+      <div className="mushaf-bottombar">
+        <div className="flex items-center gap-2">
+          {/* Sonraki sayfa: sola */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              flashNav();
+              if (hasNext) onPageChange(pageNumber + 1);
+            }}
+            disabled={!hasNext}
+            aria-label="Sonraki sayfa"
+            className={`shrink-0 grid place-items-center w-5 h-5 rounded-md bg-[var(--mushaf-accent)] text-[#fff4cb] disabled:opacity-35 disabled:pointer-events-none transition-opacity ${
+              showNavButtons ? "opacity-100" : "opacity-40"
+            }`}
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <span className="mushaf-page-num">{toArabicDigits(pageNumber)}</span>
+        </div>
+
+        {/* Sağ tarafta mod anahtarı + dinleme */}
+        <div className="flex items-center gap-3">
+          {onSwitchToWordMode && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onSwitchToWordMode?.();
+                onSwitchToWordMode();
               }}
-              disabled={!onSwitchToWordMode}
-              className="px-2 sm:px-2.5 py-0.5 rounded-md font-medium text-stone-500 hover:text-emerald-700 transition-colors disabled:pointer-events-none"
-              style={{ fontSize: "calc(10px * var(--fit, 1))" }}
+              className="shrink-0 px-2.5 py-1 rounded-lg border border-[var(--mushaf-accent)]/45 text-[10px] sm:text-[11px] font-medium text-[var(--mushaf-accent)]/80 hover:bg-[var(--mushaf-accent)]/10 transition-colors"
             >
               Kelime Meali
             </button>
-            <span
-              className="px-2 sm:px-2.5 py-0.5 rounded-md font-semibold bg-white text-emerald-700 shadow-sm"
-              style={{ fontSize: "calc(10px * var(--fit, 1))" }}
-              aria-current="page"
-            >
-              Mushaf
-            </span>
-          </div>
-
-          <span className="flex-1" />
+          )}
 
           <button
             onClick={(e) => {
@@ -343,190 +496,21 @@ export const MushafView: React.FC<MushafViewProps> = ({
               isPlayingPage ? "Sayfa dinlemeyi durdur" : "Sayfayı dinle"
             }
             title={isPlayingPage ? "Durdur" : "Sayfayı dinle"}
-            className={`shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-colors ${
+            className={`shrink-0 flex items-center gap-1 text-[11px] font-medium transition-colors disabled:opacity-30 ${
               isPlayingPage
-                ? "text-amber-600 bg-amber-50"
-                : "text-stone-400 hover:text-emerald-700 hover:bg-stone-100"
-            } disabled:opacity-30 disabled:pointer-events-none`}
+                ? "text-[var(--mushaf-accent)]"
+                : "text-[var(--mushaf-accent)]/60 hover:text-[var(--mushaf-accent)]"
+            }`}
           >
             {isPlayingPage ? (
-              <Square className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <Square className="w-3.5 h-3.5" />
             ) : (
-              <Play className="w-3 h-3 sm:w-3.5 sm:h-3.5 translate-x-px fill-current" />
+              <Play className="w-3.5 h-3.5 fill-current" />
             )}
+            <span className="hidden sm:inline">
+              {isPlayingPage ? "Durduruluyor…" : "Sayfayı Dinle"}
+            </span>
           </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePlayPage();
-            }}
-            disabled={verses.length === 0}
-            className={`shrink-0 text-[11px] sm:text-xs font-medium transition-colors ${
-              isPlayingPage
-                ? "text-amber-600"
-                : "text-stone-400 hover:text-emerald-700"
-            } disabled:opacity-30 disabled:pointer-events-none`}
-          >
-            {isPlayingPage ? "Durduruluyor…" : "Sayfayı Dinle"}
-          </button>
-        </div>
-
-        {/* Kur'an metni - dikeyde ortalanmış */}
-        <div
-          ref={contentRef}
-          className="mushaf-fit-content flex flex-col"
-          style={{ gap: "calc(0.45rem * var(--fit, 1))" }}
-        >
-          {Object.entries(versesByChapter).map(([chIdStr, chVerses]) => {
-            const chObj = chapters.find((c) => c.id === parseInt(chIdStr, 10));
-            const startsSurah = chVerses.some((v) => v.verse_number === 1);
-
-            return (
-              <div
-                key={chIdStr}
-                className="flex flex-col"
-                style={{ gap: "calc(0.3rem * var(--fit, 1))" }}
-              >
-                {/* Sûre başlığı - yalnızca metin */}
-                {startsSurah && chObj && (
-                  <div className="text-center">
-                    <div
-                      dir="rtl"
-                      className="mushaf-surah-title font-arabic font-bold"
-                      style={{ fontSize: "calc(1.5rem * var(--fit, 1))" }}
-                    >
-                      سُورَةُ {chObj.name_arabic}
-                    </div>
-                    {chObj.bismillah_pre && (
-                      <div
-                        dir="rtl"
-                        className="mushaf-bismillah font-arabic"
-                        style={{
-                          fontSize: "calc(1.1rem * var(--fit, 1))",
-                          marginTop: "calc(0.22rem * var(--fit, 1))",
-                        }}
-                      >
-                        بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                      </div>
-                    )}
-                    <div
-                      className="mx-auto w-16 h-px"
-                      style={{
-                        background: "var(--border-color)",
-                        marginTop: "calc(0.28rem * var(--fit, 1))",
-                        marginBottom: "calc(0.18rem * var(--fit, 1))",
-                      }}
-                    />
-                  </div>
-                )}
-
-                {/* Kelimeler: Mushaf hattı gibi satırlar iki yana yaslanır */}
-                <div
-                  dir="rtl"
-                  className="mushaf-verse-text mushaf-ink"
-                  style={{
-                    fontSize: `calc(1.75rem * var(--fit, 1))`,
-                    marginBlock: "calc(0.3rem * var(--fit, 1))",
-                  }}
-                >
-                  {chVerses.map((v) => (
-                    <React.Fragment key={v.id}>
-                      {v.words.map((w) => (
-                        <WordBadge
-                          key={`${v.id}-${w.id}`}
-                          word={w}
-                          verse={v}
-                          chapterName={chObj?.translated_name.name}
-                          alwaysShowMeaning={settings.alwaysShowWordMeaning}
-                          fontClass={fontClass}
-                          fontSizeMultiplier={settings.fontSizeMultiplier}
-                          flow="inline-block"
-                        />
-                      ))}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Sayfa gezinme - Arapça yönü: sonraki sola, önceki sağa.
-            Mobilde butonlar yalnızca geçiş animasyonu sırasında görünür;
-            normalde sayfayı parmakla sürüklemek değiştirir. */}
-        <div className="mushaf-fit-footer pt-2 mt-1 border-t border-stone-300/70">
-          <div className="flex items-center justify-between gap-2">
-            {/* Masaüstünde hep görünür, mobilde geçişte belirir */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                flashNav();
-                onPageChange(pageNumber + 1);
-              }}
-              disabled={!hasNext}
-              aria-label="Sonraki sayfa"
-              className={`group flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-stone-400 hover:text-emerald-700 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none transition-opacity duration-300 sm:opacity-100 ${
-                showNavButtons
-                  ? "opacity-100"
-                  : "opacity-0 pointer-events-none sm:pointer-events-auto"
-              }`}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Sonraki</span>
-            </button>
-
-            {/* Sayfa numarası + yer imi (hatim takibi) */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono text-[11px] sm:text-xs text-stone-400 tabular-nums">
-                {pageNumber}
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTogglePageBookmark?.(pageNumber);
-                }}
-                aria-label={
-                  isPageBookmarked
-                    ? `${pageNumber}. sayfayı yer imlerinden çıkar`
-                    : `${pageNumber}. sayfayı yer imlerine ekle`
-                }
-                title={
-                  isPageBookmarked
-                    ? "Yer imlerinden çıkar"
-                    : "Yer imlerine ekle"
-                }
-                aria-pressed={!!isPageBookmarked}
-                className={`p-1 rounded-full transition-colors ${
-                  isPageBookmarked
-                    ? "text-[var(--bookmark)] hover:bg-emerald-50"
-                    : "text-stone-400 hover:text-[var(--bookmark)] hover:bg-stone-200/50"
-                }`}
-              >
-                <Bookmark
-                  className={`w-3.5 h-3.5 ${isPageBookmarked ? "fill-current" : ""}`}
-                />
-              </button>
-            </div>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                flashNav();
-                onPageChange(pageNumber - 1);
-              }}
-              disabled={!hasPrev}
-              aria-label="Önceki sayfa"
-              className={`group flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-stone-400 hover:text-emerald-700 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none transition-opacity duration-300 sm:opacity-100 ${
-                showNavButtons
-                  ? "opacity-100"
-                  : "opacity-0 pointer-events-none sm:pointer-events-auto"
-              }`}
-            >
-              <span className="hidden sm:inline">Önceki</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
         </div>
       </div>
     </div>

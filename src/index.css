@@ -176,44 +176,31 @@ body {
 }
 
 /* ============================================
-   MUSHAF - AYET SONU İŞARETİ (Kur'an hattı)
+   MUSHAF - AYET SONU İŞARETİ (Madani)
+   Altın çember içinde Arap rakamı
    ============================================ */
 .ayah-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  margin-inline: 0.15em;
-  padding: 0 calc(0.1em * var(--fit, 1));
+  width: calc(1.15em * var(--fit, 1));
+  height: calc(1.15em * var(--fit, 1));
+  margin-inline: 0.22em;
+  border: 1px solid #a8834a;
+  border-radius: 50%;
   font-family: "Amiri", "Scheherazade New", serif;
   line-height: 1;
   vertical-align: middle;
-  /* Kehribar ton, Mushaf mürekkebi hissi */
-  color: #3f3520;
-  text-shadow: 0 calc(1px * var(--fit, 1)) calc(1.5px * var(--fit, 1))
-    rgba(90, 74, 30, 0.28);
+  color: #6b4f1d;
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 0 0 calc(1px * var(--fit, 1)) rgba(255, 255, 255, 0.5);
 }
 
 .ayah-mark__num {
-  font-size: calc(1.05em * var(--fit, 1));
+  font-size: calc(0.62em * var(--fit, 1));
   font-weight: 600;
   letter-spacing: -0.02em;
-}
-
-/* Parantezler sayıdan küçük ve daha soluk */
-.ayah-mark__paren {
-  font-size: calc(1.15em * var(--fit, 1));
-  font-weight: 400;
-  opacity: 0.55;
-  transform: scaleX(0.82);
-}
-
-.ayah-mark__paren--r {
-  margin-inline-end: -0.02em;
-}
-
-.ayah-mark__paren--l {
-  margin-inline-start: -0.02em;
+  transform: translateY(calc(0.06em * var(--fit, 1)));
 }
 
 /* ============================================
@@ -255,6 +242,62 @@ body {
 /* Krem sayfa üzerinde okunabilirlik: metin mürekkep rengi */
 .mushaf-page-surface .mushaf-ink {
   color: var(--ink);
+}
+
+/* ============================================
+   MUSHAF - MADANI ÜST/ALT BAR VE ROZETLER
+   ============================================ */
+:root {
+  --mushaf-accent: #b57e2a;
+}
+
+/* Üst bar ve alt bar: sayfa zeminiyle aynı krem, ince altay çizgi */
+.mushaf-topbar,
+.mushaf-bottombar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--page-background);
+  color: var(--mushaf-accent);
+}
+
+.mushaf-topbar {
+  border-bottom: 1px solid rgba(181, 126, 42, 0.22);
+}
+
+.mushaf-bottombar {
+  border-top: 1px solid rgba(181, 126, 42, 0.22);
+}
+
+/* Rozetler: ince altın çerçeve, Madani tarzı */
+.mushaf-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  border: 1px solid rgba(181, 126, 42, 0.5);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: var(--mushaf-accent);
+}
+
+.mushaf-badge--juz {
+  font-family: "Amiri", "Scheherazade New", serif;
+  font-size: 13px;
+}
+
+/* Alt bardaki Arap rakamı */
+.mushaf-page-num {
+  font-family: "Amiri", "Scheherazade New", serif;
+  font-size: 15px;
+  color: var(--mushaf-accent);
+  min-width: 1.4em;
+  text-align: center;
 }
 
 /* ============================================
@@ -334,11 +377,6 @@ body.mushaf-fit-lock {
   overflow: hidden;
   /* Sayfa metni dikeyde ortalanır (Mushaf görünümü) */
   justify-content: center;
-}
-
-.mushaf-fit-header,
-.mushaf-fit-footer {
-  flex: 0 0 auto;
 }
 
 /* ============================================
