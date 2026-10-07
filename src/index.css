@@ -23,14 +23,76 @@
   --color-emerald-900: #00332c;
 }
 
+/* ============================================
+   ARAPÇA FONTLAR — GÖMÜLÜ (tam offline)
+   Google Fonts CDN'i yerine public/fonts altından servis edilir; APK
+   internetsiz açıldığında Madani görünümü bozulmasın diye.
+   Scheherazade New: Uthmani yazıma en yakın açık (SIL OFL) font.
+   ============================================ */
+@font-face {
+  font-family: "Scheherazade New";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/scheherazade-400.woff2") format("woff2");
+  unicode-range:
+    U+0600-06ff, U+0750-077f, U+0870-088e, U+0890-0891, U+0898-08e1,
+    U+08e3-08ff, U+200c-200e, U+2010-2011, U+204f, U+2e41, U+fb50-fdff,
+    U+fe70-fe74, U+fe76-fefc;
+}
+@font-face {
+  font-family: "Scheherazade New";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/scheherazade-700.woff2") format("woff2");
+  unicode-range:
+    U+0600-06ff, U+0750-077f, U+0870-088e, U+0890-0891, U+0898-08e1,
+    U+08e3-08ff, U+200c-200e, U+2010-2011, U+204f, U+2e41, U+fb50-fdff,
+    U+fe70-fe74, U+fe76-fefc;
+}
+@font-face {
+  font-family: "Amiri";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/amiri-400.woff2") format("woff2");
+  unicode-range:
+    U+0600-06ff, U+0750-077f, U+0870-088e, U+0890-0891, U+0898-08e1,
+    U+08e3-08ff, U+200c-200e, U+2010-2011, U+204f, U+2e41, U+fb50-fdff,
+    U+fe70-fe74, U+fe76-fefc;
+}
+@font-face {
+  font-family: "Amiri";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/amiri-700.woff2") format("woff2");
+  unicode-range:
+    U+0600-06ff, U+0750-077f, U+0870-088e, U+0890-0891, U+0898-08e1,
+    U+08e3-08ff, U+200c-200e, U+2010-2011, U+204f, U+2e41, U+fb50-fdff,
+    U+fe70-fe74, U+fe76-fefc;
+}
+
+/* Arapça OpenType özellikleri: bağlı formlar, bağlamlı alternatifler ve
+   tanı işaretleri (üstün/altın) doğru dizilsin. */
+:root {
+  --arabic-features: "liga" 1, "calt" 1, "rlig" 1, "mark" 1, "mkmk" 1, "curs" 1;
+}
+
 @layer utilities {
   .font-arabic {
     font-family:
-      "Amiri", "Traditional Arabic", "Scheherazade New", "Noto Naskh Arabic",
+      "Amiri", "Scheherazade New", "Traditional Arabic", "Noto Naskh Arabic",
       serif;
+    font-feature-settings: var(--arabic-features);
   }
+  /* Mushaf hattı: Uthmani yazıma en yakın font */
   .font-scheherazade {
-    font-family: "Scheherazade New", "Amiri", "Traditional Arabic", serif;
+    font-family:
+      "Scheherazade New", "Amiri", "Traditional Arabic", "Noto Naskh Arabic",
+      serif;
+    font-feature-settings: var(--arabic-features);
   }
   /* Madani satır aralığı çarpanı: 1.2 */
   .leading-mushaf {
@@ -105,12 +167,10 @@
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
+  /* Arayüz fontu: sistem fontu (yerel, offline). Arapça için gömülü
+     Scheherazade New / Amiri kullanılır. */
   font-family:
-    "Plus Jakarta Sans",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -138,15 +198,19 @@ body {
 }
 
 /* ============================================
-   MUSHAF HATTI - İKİ YANA YASLAMA
-   Satırlar kashida yerine boşlukla eşitlenir (Madani sayfaları gibi).
-   text-align-last: justify ile son satır da yaslanır.
+   MUSHAF HATTI - UTHMANİ YAZIM
+   Metin `code_uthmani` alanından gelir (doğru Uthmani yazım). Font olarak
+   Scheherazade New (Uthmani'ye en yakın açık font) tercih edilir.
+   Bağlı formlar + bağlamlı alternatifler + tanı işaretleri açık tutulur;
+   kashida yerine boşlukla eşitleme (justify) kullanılır.
    ============================================ */
 .mushaf-verse-text {
   /* Madani hat düzeni: satır yüksekliği sayfa yüksekliğinin 1/15'idir
      (JS `--line-h` ile px olarak yazılır), puntola buna sığacak şekilde
      ölçeklenir. Böylece 15 satır sayfayı tamamen doldurur. */
   line-height: var(--line-h, 1.6);
+  font-feature-settings: var(--arabic-features);
+  font-variant-ligatures: common-ligatures contextual;
   text-align: justify;
   text-align-last: justify;
   word-spacing: 0.05em;

@@ -43,14 +43,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             {[
               {
-                id: "amiri",
-                name: "Amiri (Klasik Hat)",
-                sample: "بِسْمِ ٱللَّهِ",
+                id: "scheherazade",
+                name: "Uthmani (Madani)",
+                sample: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ",
               },
               {
-                id: "scheherazade",
-                name: "Şehrizad (Osmanlı)",
-                sample: "بِسْمِ ٱللَّهِ",
+                id: "amiri",
+                name: "Amiri (Klasik)",
+                sample: "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ",
               },
             ].map(({ id, name, sample }) => (
               <button

@@ -41,7 +41,9 @@ import {
 const DEFAULT_SETTINGS: AppSettings = {
   // Uygulama doğrudan sade Mushaf ekranıyla açılır
   displayMode: "mushaf",
-  arabicFont: "amiri",
+  // Varsayılan Uthmani: Scheherazade New, code_uthmani yazımıyla
+  // Madani Mushaf'a en yakın açık font
+  arabicFont: "scheherazade",
   fontSizeMultiplier: 1.0,
   translationSource: 77, // Diyanet
   alwaysShowWordMeaning: false,

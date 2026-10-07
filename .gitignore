@@ -22,6 +22,9 @@ android/.idea/
 # Offline veri (üretici script'i ile yeniden oluşturulur)
 public/offline/
 
+# Arapça fontlar gömülü kalmalı (tam offline çalışma) — public/fonts
+# kasıtlı olarak ignore edilmiyor.
+
 # Günlükler
 npm-debug.log*
 yarn-debug.log*
