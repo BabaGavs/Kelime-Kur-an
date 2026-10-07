@@ -469,23 +469,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
           <span className="mushaf-page-num">{toArabicDigits(pageNumber)}</span>
         </div>
 
-        {/* Sağ: sonraki ok, mod anahtarı ve dinleme (kenardan içeride) */}
-        <div className="flex items-center gap-3 mr-6 sm:mr-12">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              flashNav();
-              if (hasNext) onPageChange(pageNumber + 1);
-            }}
-            disabled={!hasNext}
-            aria-label="Sonraki sayfa"
-            className={`shrink-0 grid place-items-center w-5 h-5 rounded-md bg-[var(--mushaf-accent)] text-[#fff4cb] disabled:opacity-35 disabled:pointer-events-none transition-opacity ${
-              showNavButtons ? "opacity-100" : "opacity-40"
-            }`}
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-
+        {/* Sağ: mod anahtarı, dinleme ve en sağda sonraki sayfa oku */}
+        <div className="flex items-center gap-3">
           {onSwitchToWordMode && (
             <button
               onClick={(e) => {
@@ -522,6 +507,21 @@ export const MushafView: React.FC<MushafViewProps> = ({
             <span className="hidden sm:inline">
               {isPlayingPage ? "Durduruluyor…" : "Sayfayı Dinle"}
             </span>
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              flashNav();
+              if (hasNext) onPageChange(pageNumber + 1);
+            }}
+            disabled={!hasNext}
+            aria-label="Sonraki sayfa"
+            className={`shrink-0 grid place-items-center w-5 h-5 rounded-md bg-[var(--mushaf-accent)] text-[#fff4cb] disabled:opacity-35 disabled:pointer-events-none transition-opacity ${
+              showNavButtons ? "opacity-100" : "opacity-40"
+            }`}
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
