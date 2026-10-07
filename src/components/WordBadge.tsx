@@ -8,6 +8,8 @@ interface WordBadgeProps {
   alwaysShowMeaning: boolean;
   fontClass: string;
   fontSizeMultiplier: number;
+  /** Mushaf'ta satırların iki yana yaslanabilmesi için inline-block akış */
+  flow?: "inline-flex" | "inline-block";
 }
 
 const VIEWPORT_MARGIN = 8;
@@ -23,6 +25,7 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
   alwaysShowMeaning,
   fontClass,
   fontSizeMultiplier,
+  flow = "inline-flex",
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [tapMeaning, setTapMeaning] = useState(false);
@@ -126,7 +129,9 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
   if (isEndOfAyah) {
     return (
       <span
-        className="ayah-mark select-none"
+        className={`ayah-mark select-none align-middle ${
+          flow === "inline-block" ? "inline-block" : "inline-flex"
+        }`}
         title={`${verse.verse_key} numaralı âyet sonu`}
         aria-label={`${verse.verse_number}. âyet sonu`}
       >
@@ -152,12 +157,14 @@ export const WordBadge: React.FC<WordBadgeProps> = ({
   return (
     <div
       ref={rootRef}
-      className={`relative inline-flex flex-col items-center justify-center rounded-lg transition-all cursor-pointer group select-none ${
-        tapMeaning
-          ? "bg-[var(--ayah-selected)] ring-1 ring-emerald-300"
-          : "hover:bg-emerald-50"
-      }`}
-      style={{ padding: "calc(0.25rem) calc(0.375rem)" }}
+      className={`relative flex-col items-center justify-center rounded-lg transition-all cursor-pointer group select-none align-middle ${
+        flow === "inline-block" ? "inline-block" : "inline-flex"
+      } ${tapMeaning ? "bg-[var(--ayah-selected)] ring-1 ring-emerald-300" : "hover:bg-emerald-50"}`}
+      style={{
+        padding: "calc(0.25rem) calc(0.375rem)",
+        // Mushaf akışında yaslama için dikey boşluk sıfırlanır
+        marginBlock: flow === "inline-block" ? "0" : undefined,
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onPointerDown={handleActivate}

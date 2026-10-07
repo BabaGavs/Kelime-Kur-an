@@ -254,13 +254,13 @@ export const MushafView: React.FC<MushafViewProps> = ({
   const hasNext = pageNumber < 604;
 
   return (
-    // Madani sayfa kenar boşluğu: page_margin 6-11dp
+    // Mushaf tam ekran: dışarıda beyaz şerit kalmaz
     <div
       ref={surfaceRef}
-      className="h-full flex flex-col relative mushaf-page-surface"
+      className="h-full w-full flex flex-col relative mushaf-page-surface"
       style={{
-        margin: "calc(0.45rem * var(--fit, 1))",
-        padding: "calc(0.5rem * var(--fit, 1))",
+        borderRadius: 0,
+        borderWidth: 0,
         // Dokunmatik yatay sürükleme: tarayıcının kendi kaydırmasını engelle
         touchAction: "pan-y",
       }}
@@ -276,9 +276,10 @@ export const MushafView: React.FC<MushafViewProps> = ({
         ref={frameRef}
         className="mushaf-fit-frame mushaf-page-enter"
         style={{
-          // Üst/alt boşluk neredeyse sıfır: başlık ve gezinme kenara yaslanır
+          // Tam ekran sayfa: üst/alt neredeyse sıfır, yanlarda okuma payı
           paddingTop: "calc(0.15rem * var(--fit, 1))",
           paddingBottom: "calc(0.15rem * var(--fit, 1))",
+          paddingInline: "calc(0.5rem * var(--fit, 1))",
         }}
       >
         {/* Üst satır: solda fihrist + konum bilgisi, sağda sayfa dinleme */}
@@ -420,11 +421,14 @@ export const MushafView: React.FC<MushafViewProps> = ({
                   </div>
                 )}
 
-                {/* Kelimeler */}
+                {/* Kelimeler: Mushaf hattı gibi satırlar iki yana yaslanır */}
                 <div
                   dir="rtl"
-                  className="flex flex-wrap items-center justify-center gap-x-0.5 sm:gap-x-1 leading-mushaf text-center mushaf-ink"
-                  style={{ rowGap: "calc(0.3rem * var(--fit, 1))" }}
+                  className="mushaf-verse-text mushaf-ink"
+                  style={{
+                    fontSize: `calc(1.75rem * var(--fit, 1))`,
+                    marginBlock: "calc(0.3rem * var(--fit, 1))",
+                  }}
                 >
                   {chVerses.map((v) => (
                     <React.Fragment key={v.id}>
@@ -437,6 +441,7 @@ export const MushafView: React.FC<MushafViewProps> = ({
                           alwaysShowMeaning={settings.alwaysShowWordMeaning}
                           fontClass={fontClass}
                           fontSizeMultiplier={settings.fontSizeMultiplier}
+                          flow="inline-block"
                         />
                       ))}
                     </React.Fragment>

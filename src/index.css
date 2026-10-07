@@ -120,11 +120,12 @@ body {
 
 /* ============================================
    MUSHAF SAYFA GEÇİŞİ (Arapça yön: sağdan sola)
+   Sonraki sayfa sola açılır; yeni sayfa soldan kayarak yerine gelir.
    ============================================ */
 @keyframes pageEnter {
   from {
     opacity: 0;
-    transform: translateX(26px);
+    transform: translateX(-26px);
   }
   to {
     opacity: 1;
@@ -134,6 +135,29 @@ body {
 
 .mushaf-page-enter {
   animation: pageEnter 300ms cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+/* ============================================
+   MUSHAF HATTI - İKİ YANA YASLAMA
+   Satırlar kashida yerine boşlukla eşitlenir (Madani sayfaları gibi).
+   text-align-last: justify ile son satır da yaslanır.
+   ============================================ */
+.mushaf-verse-text {
+  line-height: 1.6;
+  text-align: justify;
+  text-align-last: justify;
+  word-spacing: 0.06em;
+  -webkit-hyphens: none;
+  hyphens: none;
+  /* Klasik Mushaf satır yüksekliği */
+  line-break: loose;
+}
+
+@media (max-width: 639px) {
+  .mushaf-verse-text {
+    line-height: 1.7;
+    word-spacing: 0.04em;
+  }
 }
 
 /* Kitap sırtı efekti (sayfa kenarında ince gölge) */
