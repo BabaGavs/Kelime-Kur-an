@@ -325,20 +325,6 @@ export const MushafView: React.FC<MushafViewProps> = ({
               <Search className="w-[18px] h-[18px]" />
             </button>
           )}
-
-          {/* Geri: bir önceki sayfa */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              flashNav();
-              if (hasPrev) onPageChange(pageNumber - 1);
-            }}
-            disabled={!hasPrev}
-            aria-label="Önceki sayfa"
-            className="shrink-0 grid place-items-center w-5 h-5 rounded-md bg-[var(--mushaf-accent)] text-[#fff4cb] disabled:opacity-35 disabled:pointer-events-none transition-opacity"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
         </div>
       </div>
 
@@ -453,8 +439,22 @@ export const MushafView: React.FC<MushafViewProps> = ({
 
       {/* ---------- ALT BAR (Madani) ---------- */}
       <div className="mushaf-bottombar">
+        {/* Sol: önceki ok, sonraki ok ve Arap rakamı sayfa numarası */}
         <div className="flex items-center gap-2">
-          {/* Sonraki sayfa: sola */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              flashNav();
+              if (hasPrev) onPageChange(pageNumber - 1);
+            }}
+            disabled={!hasPrev}
+            aria-label="Önceki sayfa"
+            className={`shrink-0 grid place-items-center w-5 h-5 rounded-md bg-[var(--mushaf-accent)] text-[#fff4cb] disabled:opacity-35 disabled:pointer-events-none transition-opacity ${
+              showNavButtons ? "opacity-100" : "opacity-40"
+            }`}
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -472,8 +472,8 @@ export const MushafView: React.FC<MushafViewProps> = ({
           <span className="mushaf-page-num">{toArabicDigits(pageNumber)}</span>
         </div>
 
-        {/* Sağ tarafta mod anahtarı + dinleme */}
-        <div className="flex items-center gap-3">
+        {/* Sağ tarafta mod anahtarı + dinleme (kenardan biraz içeride) */}
+        <div className="flex items-center gap-3 mr-6 sm:mr-12">
           {onSwitchToWordMode && (
             <button
               onClick={(e) => {

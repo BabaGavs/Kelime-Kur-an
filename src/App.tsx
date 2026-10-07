@@ -482,9 +482,7 @@ export default function App() {
           currentJuz={currentJuz}
           onOpenBookmarks={() => setIsBookmarksOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
-          onSwitchToWordMode={() =>
-            setSettings((s) => ({ ...s, displayMode: "word-by-word" }))
-          }
+          theme={settings.displayMode === "mushaf" ? "mushaf" : "word"}
         />
 
         {/* Center Main Reader Content Area */}
@@ -593,6 +591,7 @@ export default function App() {
               settings={settings}
               onPageChange={handleJumpToPage}
               onOpenMenu={() => setIsSidebarOpen(true)}
+              onOpenSearch={() => setIsSearchOpen(true)}
               onSwitchToWordMode={() =>
                 setSettings((s) => ({ ...s, displayMode: "word-by-word" }))
               }
